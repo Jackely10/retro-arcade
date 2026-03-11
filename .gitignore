@@ -1,0 +1,29 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Logs / temp
+*.log
+*.tmp
+*.cache
+
+# .NET / C# build output
+bin/
+obj/
+
+# Local env
+.env
+.env.*
+
+# Runtime artifacts
+*.pid
+*.seed
+
+# Archive leftovers
+*.zip

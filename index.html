@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Retro Arcade | Hauptmenue</title>
+  <meta
+    name="description"
+    content="Retro Arcade als Neon-Spielhalle mit Snake, Pong und Memory auf eigenen Seiten."
+  >
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="landing-page arcade-theme">
+  <a class="skip-link" href="#content">Zum Inhalt springen</a>
+
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="index.html">
+        <span class="brand-mark">RA</span>
+        <span>Retro Arcade</span>
+      </a>
+      <nav class="nav-links" aria-label="Spiele Navigation">
+        <a href="#player-deck">Player Deck</a>
+        <a href="#game-floor">Automaten</a>
+        <a href="snake.html">Snake</a>
+        <a href="pong.html">Pong</a>
+        <a href="memory.html">Memory</a>
+      </nav>
+      <div class="topbar-controls">
+        <button class="button button-secondary topbar-sound" data-arcade-sound-toggle type="button">Sound: AN</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="content" class="arcade-lobby">
+    <section class="hero hero-landing arcade-hero">
+      <div class="container arcade-hero-grid">
+        <article class="arcade-marquee">
+          <p class="kicker">Retro Arcade Main Menu</p>
+          <h1>Waehle deinen Automaten</h1>
+          <p class="lead">
+            Das Hauptmenue ist jetzt die Zentrale der Spielhalle: starte ein Spiel, pflege dein lokales Profil, verfolge deinen Fortschritt und springe danach mit einem klaren Rueckweg wieder direkt hierher.
+          </p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="#player-deck">Zum Player Deck</a>
+            <a class="button button-secondary" href="pong.html">Direkt zu Pong Online</a>
+          </div>
+        </article>
+
+        <aside class="arcade-status-grid">
+          <article class="info-card lobby-monitor">
+            <p class="eyebrow">Hall Status</p>
+            <div class="status-grid status-grid-wide arcade-score-grid">
+              <div class="status-box">
+                <span>Snake Best</span>
+                <strong data-arcade-record="snake-score">0</strong>
+              </div>
+              <div class="status-box">
+                <span>Memory Best</span>
+                <strong data-arcade-record="memory-best-moves">--</strong>
+              </div>
+              <div class="status-box">
+                <span>Pong Modus</span>
+                <strong>1v1 Live</strong>
+              </div>
+              <div class="status-box">
+                <span>Pilot</span>
+                <strong data-arcade-profile-name>Gast</strong>
+              </div>
+            </div>
+          </article>
+
+          <article class="info-card lobby-monitor">
+            <p class="eyebrow">Insert Coin</p>
+            <ul class="plain-list compact-list">
+              <li>Jeder Automat hat seine eigene grosse Spielseite</li>
+              <li>Profil, Sound-Status und Arcade-Fortschritt werden lokal gespeichert</li>
+              <li>Pong bleibt fuer Revanchen im selben Raum verbunden</li>
+            </ul>
+          </article>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section arcade-meta-section" id="player-deck">
+      <div class="container">
+        <div class="section-heading">
+          <p class="kicker">Player Deck</p>
+          <h2>Dein Meta-System ist live.</h2>
+          <p class="lead compact-lead">
+            Ein globaler Spielername, dauerhafte Arcade-Starts, Siege und Spielwerte machen aus den drei Games jetzt eine zusammenhaengende Retro-Spielhalle.
+          </p>
+        </div>
+
+        <div class="arcade-meta-layout">
+          <article class="info-card meta-card" data-arcade-profile-scope>
+            <p class="eyebrow">Arcade Profil</p>
+            <label class="field-stack" for="arcade-profile-name">
+              <span>Spielername</span>
+              <input
+                class="text-field"
+                id="arcade-profile-name"
+                data-arcade-profile-input
+                type="text"
+                maxlength="18"
+                autocomplete="nickname"
+                placeholder="Zum Beispiel Alex"
+              >
+            </label>
+            <div class="form-row form-row-compact">
+              <button class="button button-primary" data-arcade-profile-save type="button">Profil speichern</button>
+              <a class="button button-secondary" href="#game-floor">Zum Automaten</a>
+            </div>
+            <div class="status-grid status-grid-wide arcade-meta-grid">
+              <div class="status-box">
+                <span>Pilot</span>
+                <strong data-arcade-profile-name>Gast</strong>
+              </div>
+              <div class="status-box">
+                <span>Arcade Starts</span>
+                <strong data-arcade-stat="total-starts">0</strong>
+              </div>
+              <div class="status-box">
+                <span>Siege</span>
+                <strong data-arcade-stat="total-wins">0</strong>
+              </div>
+              <div class="status-box">
+                <span>Sound</span>
+                <strong data-arcade-sound-label>AN</strong>
+              </div>
+            </div>
+          </article>
+
+          <article class="info-card meta-card">
+            <p class="eyebrow">Fortschritt</p>
+            <div class="status-grid status-grid-wide arcade-progress-grid">
+              <div class="status-box">
+                <span>Snake Runs</span>
+                <strong data-arcade-stat="snake-plays">0</strong>
+              </div>
+              <div class="status-box">
+                <span>Snake Punkte</span>
+                <strong data-arcade-stat="snake-total-score">0</strong>
+              </div>
+              <div class="status-box">
+                <span>Memory Runs</span>
+                <strong data-arcade-stat="memory-plays">0</strong>
+              </div>
+              <div class="status-box">
+                <span>Memory Clears</span>
+                <strong data-arcade-stat="memory-wins">0</strong>
+              </div>
+              <div class="status-box">
+                <span>Pong Matches</span>
+                <strong data-arcade-stat="pong-matches">0</strong>
+              </div>
+              <div class="status-box">
+                <span>Pong Record</span>
+                <strong data-arcade-stat="pong-record">0 - 0</strong>
+              </div>
+            </div>
+            <p class="meta-hint">
+              Alles bleibt lokal in deinem Browser. Kein Account, kein externer Server, kein Reset durch die Webseite.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section arcade-floor" id="game-floor">
+      <div class="container">
+        <div class="section-heading">
+          <p class="kicker">Select Cabinet</p>
+          <h2>Drei Automaten stehen bereit.</h2>
+          <p class="lead compact-lead">
+            Einheitliches Neon-Grid, klares Profil-System und direkt sichtbare Bestwerte fuer den schnellen Sprung in die naechste Runde.
+          </p>
+        </div>
+
+        <div class="arcade-machine-grid">
+          <a class="arcade-machine snake-machine" href="snake.html">
+            <span class="machine-marquee">Cabinet 01</span>
+            <div class="machine-screen">
+              <p class="machine-mode">Single Player</p>
+              <h3 class="machine-title">Snake.exe</h3>
+              <p class="machine-copy">
+                Friss Orbs, wachse weiter und halte deinen Lauf so lange wie moeglich am Leben.
+              </p>
+              <div class="machine-stats">
+                <span>Best <strong data-arcade-record="snake-score">0</strong></span>
+                <span>Runs <strong data-arcade-stat="snake-plays">0</strong></span>
+              </div>
+            </div>
+            <div class="machine-controls">
+              <span>Pfeile</span>
+              <span>WASD</span>
+              <span>Score Chase</span>
+            </div>
+            <span class="machine-cta">Spiel starten</span>
+          </a>
+
+          <a class="arcade-machine pong-machine" href="pong.html">
+            <span class="machine-marquee">Cabinet 02</span>
+            <div class="machine-screen">
+              <p class="machine-mode">Online Versus</p>
+              <h3 class="machine-title">Pong Duel</h3>
+              <p class="machine-copy">
+                Erstelle einen Raum, lade jemanden ein und spiele mit Revanche direkt im gleichen Match-Raum weiter.
+              </p>
+              <div class="machine-stats">
+                <span>Matches <strong data-arcade-stat="pong-matches">0</strong></span>
+                <span>Record <strong data-arcade-stat="pong-record">0 - 0</strong></span>
+              </div>
+            </div>
+            <div class="machine-controls">
+              <span>W / S</span>
+              <span>Maus</span>
+              <span>Rematch</span>
+            </div>
+            <span class="machine-cta">Arena betreten</span>
+          </a>
+
+          <a class="arcade-machine memory-machine" href="memory.html">
+            <span class="machine-marquee">Cabinet 03</span>
+            <div class="machine-screen">
+              <p class="machine-mode">Puzzle Run</p>
+              <h3 class="machine-title">Memory Match</h3>
+              <p class="machine-copy">
+                Finde alle Paare in moeglichst wenigen Zuegen und verbessere deinen lokalen Rekord.
+              </p>
+              <div class="machine-stats">
+                <span>Best <strong data-arcade-record="memory-best-moves">--</strong></span>
+                <span>Clears <strong data-arcade-stat="memory-wins">0</strong></span>
+              </div>
+            </div>
+            <div class="machine-controls">
+              <span>Klicks</span>
+              <span>Moves</span>
+              <span>Mind Game</span>
+            </div>
+            <span class="machine-cta">Spiel starten</span>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p>Retro Arcade Hauptmenue mit Neon-Automaten, Profil und lokalen Meta-Werten.</p>
+      <p>&copy; <span id="year"></span> Retro Arcade</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

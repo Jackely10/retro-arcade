@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Snake.exe | Retro Arcade</title>
+  <meta
+    name="description"
+    content="Snake als eigenstaendige Browser-Game-Seite mit grossem Spielfeld."
+  >
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="game-page snake-theme">
+  <a class="skip-link" href="#content">Zum Inhalt springen</a>
+
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="index.html">
+        <span class="brand-mark">RA</span>
+        <span>Retro Arcade</span>
+      </a>
+      <nav class="nav-links" aria-label="Spiele Navigation">
+        <a href="index.html">Hauptmenue</a>
+        <a href="pong.html">Pong</a>
+        <a href="memory.html">Memory</a>
+      </nav>
+      <div class="topbar-controls">
+        <button class="button button-secondary topbar-sound" data-arcade-sound-toggle type="button">Sound: AN</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="content" class="game-shell">
+    <div class="container">
+      <section class="page-intro">
+        <div>
+          <p class="kicker">Game 01</p>
+          <h1>Snake.exe</h1>
+          <p class="lead">
+            Eine grosse Einzelansicht fuer den Klassiker. Sammle Orbs, wachse weiter und vermeide Wand und Eigenkollision.
+          </p>
+        </div>
+        <div class="page-actions">
+          <a class="button button-secondary menu-return" href="index.html">Zur&uuml;ck zum Hauptmen&uuml;</a>
+        </div>
+      </section>
+
+      <section class="game-layout">
+        <article class="stage-card">
+          <div class="stage-toolbar">
+            <div class="hud hud-wide">
+              <span>Score <strong id="snake-score">0</strong></span>
+              <span>Best <strong data-arcade-record="snake-score">0</strong></span>
+              <span>Status <strong id="snake-status">Bereit</strong></span>
+            </div>
+            <button class="button button-primary stage-button" id="snake-reset" type="button">Neu starten</button>
+          </div>
+
+          <div class="stage-viewport stage-viewport-square">
+            <canvas
+              class="game-canvas game-canvas-square"
+              id="snake-canvas"
+              width="560"
+              height="560"
+              tabindex="0"
+              aria-label="Snake Spiel"
+            ></canvas>
+            <div class="game-overlay" id="snake-overlay" aria-live="polite">
+              <p class="game-overlay-kicker">Snake.exe</p>
+              <h2 class="game-overlay-title" id="snake-overlay-title">Bereit fuer den Start</h2>
+              <p class="game-overlay-text" id="snake-overlay-text">
+                Starte eine Runde und iss moeglichst viele neon-gruene Orbs.
+              </p>
+              <p class="game-overlay-meta" id="snake-overlay-meta">Bestwert: 0</p>
+              <div class="overlay-actions">
+                <button class="button button-primary" id="snake-overlay-action" type="button">Spiel starten</button>
+              </div>
+            </div>
+          </div>
+          <p class="game-note">Steuerung: Pfeiltasten oder WASD. Leertaste startet nach Game Over sofort neu.</p>
+        </article>
+
+        <aside class="info-stack">
+          <article class="info-card meta-side-card">
+            <p class="eyebrow">Arcade Deck</p>
+            <div class="status-grid status-grid-wide">
+              <div class="status-box">
+                <span>Pilot</span>
+                <strong data-arcade-profile-name>Gast</strong>
+              </div>
+              <div class="status-box">
+                <span>Arcade Starts</span>
+                <strong data-arcade-stat="total-starts">0</strong>
+              </div>
+              <div class="status-box">
+                <span>Snake Runs</span>
+                <strong data-arcade-stat="snake-plays">0</strong>
+              </div>
+              <div class="status-box">
+                <span>Sound</span>
+                <strong data-arcade-sound-label>AN</strong>
+              </div>
+            </div>
+            <p>
+              Gesamtpunkte in Snake: <strong data-arcade-stat="snake-total-score">0</strong>. Im Hauptmenue kannst du dein Profil zentral anpassen.
+            </p>
+          </article>
+
+          <article class="info-card">
+            <p class="eyebrow">Steuerung</p>
+            <ul class="plain-list compact-list">
+              <li>Pfeiltasten oder WASD fuer Richtungen</li>
+              <li>Leertaste fuer Neustart nach einer Niederlage</li>
+              <li>Das Spielfeld ist bewusst groesser als vorher</li>
+            </ul>
+          </article>
+
+          <article class="info-card">
+            <p class="eyebrow">Highscore</p>
+            <p>
+              Dein bester Lauf wird lokal im Browser gespeichert. Aktueller Bestwert:
+              <strong class="record-value" data-arcade-record="snake-score">0</strong>
+            </p>
+          </article>
+
+          <article class="info-card">
+            <p class="eyebrow">Ziel</p>
+            <p>
+              Iss die neon-gruenen Orbs, erhoehe deinen Score und halte die Schlange so lange wie moeglich am Leben.
+            </p>
+          </article>
+        </aside>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p>Snake auf eigener Spielseite mit Profil- und Meta-Anzeige.</p>
+      <p>&copy; <span id="year"></span> Retro Arcade</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

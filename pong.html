@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pong Online | Retro Arcade</title>
+  <meta
+    name="description"
+    content="Echter 1v1 Online-Pong mit Raumcode, Einladungslink und grosser Arena."
+  >
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="game-page pong-theme pong-online-page">
+  <a class="skip-link" href="#content">Zum Inhalt springen</a>
+
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="index.html">
+        <span class="brand-mark">RA</span>
+        <span>Retro Arcade</span>
+      </a>
+      <nav class="nav-links" aria-label="Spiele Navigation">
+        <a href="index.html">Hauptmenue</a>
+        <a href="snake.html">Snake</a>
+        <a href="memory.html">Memory</a>
+      </nav>
+      <div class="topbar-controls">
+        <button class="button button-secondary topbar-sound" data-arcade-sound-toggle type="button">Sound: AN</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="content" class="game-shell">
+    <div class="container">
+      <section class="page-intro">
+        <div>
+          <p class="kicker">Game 02 Online</p>
+          <h1>Pong Duel</h1>
+          <p class="lead">
+            Echtes 1v1 statt CPU. Verbinde dich mit dem Server, vergib dir einen Namen und schicke den Raumcode oder Link direkt weiter.
+          </p>
+        </div>
+        <div class="page-actions">
+          <a class="button button-secondary menu-return" href="index.html">Zur&uuml;ck zum Hauptmen&uuml;</a>
+        </div>
+      </section>
+
+      <section class="game-layout game-layout-pong">
+        <article class="stage-card stage-card-wide">
+          <div class="stage-toolbar">
+            <div class="hud hud-wide hud-online">
+              <span><span class="hud-label" id="pong-player-label">Links</span><strong id="pong-player-score">0</strong></span>
+              <span><span class="hud-label" id="pong-ai-label">Rechts</span><strong id="pong-ai-score">0</strong></span>
+              <span>Rolle <strong id="pong-role">-</strong></span>
+              <span>Status <strong id="pong-status">Nicht verbunden</strong></span>
+            </div>
+            <button class="button button-primary stage-button" id="pong-reset" type="button">Neue Runde</button>
+          </div>
+
+          <div class="stage-viewport stage-viewport-wide">
+            <canvas
+              class="game-canvas game-canvas-wide"
+              id="pong-canvas"
+              width="960"
+              height="560"
+              tabindex="0"
+              aria-label="Online Pong Spiel"
+            ></canvas>
+            <div class="game-overlay game-overlay-compact is-hidden" id="pong-match-overlay" aria-live="polite">
+              <p class="game-overlay-kicker">Pong Duel</p>
+              <h2 class="game-overlay-title" id="pong-match-title">Bereit fuer die Revanche</h2>
+              <p class="game-overlay-text" id="pong-match-text">
+                Wenn beide Spieler verbunden bleiben, startet die naechste Runde direkt im selben Raum.
+              </p>
+              <div class="overlay-actions overlay-actions-left">
+                <button class="button button-primary" id="pong-match-action" type="button">Rematch starten</button>
+              </div>
+            </div>
+          </div>
+          <p class="game-note" id="pong-help">
+            Starte den Server, verbinde dich und erstelle dann einen Raumcode oder trete einem bei.
+          </p>
+          <p class="rematch-note" id="pong-rematch-note">
+            Nach dem Match koennt ihr im selben Raum direkt ein Rematch starten, ohne Raumcode oder Verbindung neu aufzusetzen.
+          </p>
+        </article>
+
+        <aside class="info-stack">
+          <article class="info-card meta-side-card">
+            <p class="eyebrow">Arcade Deck</p>
+            <div class="status-grid status-grid-wide">
+              <div class="status-box">
+                <span>Pilot</span>
+                <strong data-arcade-profile-name>Gast</strong>
+              </div>
+              <div class="status-box">
+                <span>Arcade Starts</span>
+                <strong data-arcade-stat="total-starts">0</strong>
+              </div>
+              <div class="status-box">
+                <span>Pong Matches</span>
+                <strong data-arcade-stat="pong-matches">0</strong>
+              </div>
+              <div class="status-box">
+                <span>Sound</span>
+                <strong data-arcade-sound-label>AN</strong>
+              </div>
+            </div>
+            <p>
+              Pong Record: <strong data-arcade-stat="pong-record">0 - 0</strong>. Dein Name wird global fuer die ganze Arcade gespeichert.
+            </p>
+          </article>
+
+          <article class="info-card server-panel">
+            <p class="eyebrow">Verbindung</p>
+
+            <label class="field-stack" for="pong-player-name">
+              <span>Dein Name</span>
+              <input class="text-field" id="pong-player-name" data-arcade-profile-input type="text" maxlength="18" autocomplete="nickname" placeholder="Zum Beispiel Alex">
+            </label>
+
+            <div class="form-row form-row-compact">
+              <button class="button button-secondary" id="pong-save-name" type="button">Name speichern</button>
+              <button class="button button-secondary" id="pong-copy-link" type="button">Einladungslink</button>
+            </div>
+
+            <label class="field-stack" for="pong-server-url">
+              <span>Server URL</span>
+              <input class="text-field" id="pong-server-url" type="text" autocomplete="off">
+            </label>
+
+            <div class="form-row">
+              <button class="button button-primary" id="pong-connect" type="button">Verbinden</button>
+              <button class="button button-secondary" id="pong-disconnect" type="button">Trennen</button>
+            </div>
+
+            <div class="status-grid status-grid-wide">
+              <div class="status-box">
+                <span>Status</span>
+                <strong id="pong-connection">Offline</strong>
+              </div>
+              <div class="status-box">
+                <span>Phase</span>
+                <strong id="pong-phase">Lobby</strong>
+              </div>
+              <div class="status-box">
+                <span>Raum</span>
+                <strong id="pong-room-code">----</strong>
+              </div>
+              <div class="status-box">
+                <span>Spieler</span>
+                <strong id="pong-players">0/2</strong>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <button class="button button-primary" id="pong-create-room" type="button">Raum erstellen</button>
+              <button class="button button-secondary" id="pong-leave-room" type="button">Raum verlassen</button>
+            </div>
+
+            <label class="field-stack" for="pong-room-input">
+              <span>Raumcode</span>
+              <input
+                class="text-field code-field"
+                id="pong-room-input"
+                type="text"
+                maxlength="6"
+                placeholder="ABCD"
+                autocomplete="off"
+              >
+            </label>
+
+            <div class="form-row">
+              <button class="button button-primary" id="pong-join-room" type="button">Beitreten</button>
+              <button class="button button-secondary" id="pong-copy-code" type="button">Code kopieren</button>
+            </div>
+
+            <p class="share-note" id="pong-share-note">
+              Einladungslinks tragen den Raumcode direkt in die Seite ein.
+            </p>
+          </article>
+
+          <article class="info-card presence-panel">
+            <p class="eyebrow">Lobby Status</p>
+            <div class="player-presence">
+              <div class="presence-card">
+                <span>Du</span>
+                <strong id="pong-you-name">Gast</strong>
+                <p class="presence-state" id="pong-you-state">Noch nicht im Raum</p>
+              </div>
+              <div class="presence-card">
+                <span>Gegner</span>
+                <strong id="pong-opponent-name">Wartet</strong>
+                <p class="presence-state" id="pong-opponent-state">Sobald jemand beitritt, startet das Match.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="info-card">
+            <p class="eyebrow">Steuerung</p>
+            <ul class="plain-list compact-list">
+              <li>W oder Pfeil hoch fuer nach oben</li>
+              <li>S oder Pfeil runter fuer nach unten</li>
+              <li>Mausbewegung im Spielfeld funktioniert ebenfalls</li>
+              <li>Die Runde laeuft bis ein Spieler sieben Punkte erreicht</li>
+            </ul>
+          </article>
+
+          <article class="info-card">
+            <p class="eyebrow">Server Start</p>
+            <p>
+              Fuer Online-Pong starte zuerst den lokalen Server mit
+              <code class="inline-code">powershell -ExecutionPolicy Bypass -File server.ps1</code>
+              und oeffne dann die Seite ueber <code class="inline-code">http://localhost:8080/pong.html</code>.
+            </p>
+          </article>
+        </aside>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p>Pong als Online 1v1 mit Raumcode, Namen, Profil und direkter Revanche.</p>
+      <p>&copy; <span id="year"></span> Retro Arcade</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
