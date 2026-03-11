@@ -1,5 +1,7 @@
 # Retro Arcade
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Jackely10/retro-arcade)
+
 Die Arcade ist jetzt in vier Seiten aufgeteilt:
 
 - `index.html` als Auswahlseite und Player-Deck
