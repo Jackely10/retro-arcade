@@ -1040,6 +1040,80 @@ class SoundManager {
     this.masterGain = null;
     this.lastHoverAt = 0;
     this.hoverCooldownMs = 50;
+    this.gameProfiles = {
+      snake: {
+        start: [
+          { frequency: 460, duration: 0.05, gain: 0.24, type: "square", filterType: "lowpass", filterFrequency: 1400, release: 0.03 },
+          { frequency: 620, duration: 0.07, gain: 0.2, time: 0.05, type: "square", filterType: "lowpass", filterFrequency: 1500, release: 0.04 },
+        ],
+        eat: [
+          { frequency: 420, endFrequency: 820, duration: 0.11, gain: 0.3, type: "square", filterType: "lowpass", filterFrequency: 1250, endFilterFrequency: 2400, attack: 0.005, release: 0.05 },
+          { frequency: 560, endFrequency: 980, duration: 0.08, gain: 0.16, time: 0.03, type: "sawtooth", filterType: "lowpass", filterFrequency: 980, endFilterFrequency: 1800, attack: 0.004, release: 0.04 },
+        ],
+        lose: [
+          { frequency: 320, endFrequency: 150, duration: 0.26, gain: 0.32, type: "sawtooth", filterType: "lowpass", filterFrequency: 900, endFilterFrequency: 260, attack: 0.008, release: 0.14, detune: 6 },
+          { frequency: 270, endFrequency: 120, duration: 0.3, gain: 0.2, time: 0.04, type: "square", filterType: "lowpass", filterFrequency: 720, endFilterFrequency: 200, attack: 0.01, release: 0.16, detune: -6 },
+        ],
+        highScore: [
+          { frequency: 523.25, duration: 0.07, gain: 0.24, type: "square", filterType: "lowpass", filterFrequency: 1800, release: 0.04 },
+          { frequency: 659.25, duration: 0.08, gain: 0.22, time: 0.07, type: "square", filterType: "lowpass", filterFrequency: 1900, release: 0.04 },
+          { frequency: 783.99, duration: 0.12, gain: 0.26, time: 0.15, type: "square", filterType: "lowpass", filterFrequency: 2100, release: 0.06 },
+        ],
+      },
+      pong: {
+        start: [
+          { frequency: 330, duration: 0.05, gain: 0.18, type: "triangle", filterType: "lowpass", filterFrequency: 1600, release: 0.03 },
+          { frequency: 420, duration: 0.05, gain: 0.16, time: 0.05, type: "sine", filterType: "lowpass", filterFrequency: 1450, release: 0.03 },
+        ],
+        paddle: [
+          { frequency: 440, duration: 0.08, gain: 0.24, type: "triangle", filterType: "lowpass", filterFrequency: 1800, release: 0.04 },
+        ],
+        wall: [
+          { frequency: 220, duration: 0.07, gain: 0.18, type: "sine", filterType: "lowpass", filterFrequency: 920, release: 0.035 },
+        ],
+        score: [
+          { frequency: 300, duration: 0.07, gain: 0.2, type: "triangle", filterType: "lowpass", filterFrequency: 1100, release: 0.04 },
+          { frequency: 210, duration: 0.08, gain: 0.12, time: 0.06, type: "sine", filterType: "lowpass", filterFrequency: 820, release: 0.05 },
+        ],
+        win: [
+          { frequency: 392, duration: 0.08, gain: 0.26, type: "triangle", filterType: "lowpass", filterFrequency: 1700, release: 0.04 },
+          { frequency: 493.88, duration: 0.08, gain: 0.24, time: 0.08, type: "triangle", filterType: "lowpass", filterFrequency: 1700, release: 0.04 },
+          { frequency: 587.33, duration: 0.12, gain: 0.28, time: 0.16, type: "sine", filterType: "lowpass", filterFrequency: 1600, release: 0.06 },
+        ],
+        lose: [
+          { frequency: 280, endFrequency: 210, duration: 0.14, gain: 0.22, type: "triangle", filterType: "lowpass", filterFrequency: 760, endFilterFrequency: 260, attack: 0.01, release: 0.07 },
+          { frequency: 190, endFrequency: 140, duration: 0.18, gain: 0.16, time: 0.08, type: "sine", filterType: "lowpass", filterFrequency: 480, endFilterFrequency: 190, attack: 0.01, release: 0.09 },
+        ],
+      },
+      memory: {
+        start: [
+          { frequency: 280, endFrequency: 340, duration: 0.16, gain: 0.12, type: "sine", filterType: "lowpass", filterFrequency: 1400, release: 0.08, attack: 0.02 },
+          { frequency: 420, duration: 0.12, gain: 0.08, time: 0.02, type: "sine", filterType: "lowpass", filterFrequency: 1600, release: 0.07, attack: 0.02 },
+        ],
+        flip: [
+          { frequency: 300, endFrequency: 360, duration: 0.16, gain: 0.1, type: "sine", filterType: "lowpass", filterFrequency: 1200, release: 0.08, attack: 0.018 },
+          { frequency: 480, duration: 0.11, gain: 0.06, time: 0.02, type: "sine", filterType: "lowpass", filterFrequency: 1600, release: 0.06, attack: 0.018 },
+        ],
+        match: [
+          { frequency: 261.63, duration: 0.1, gain: 0.14, type: "sine", filterType: "lowpass", filterFrequency: 1700, release: 0.06, attack: 0.02 },
+          { frequency: 329.63, duration: 0.1, gain: 0.13, time: 0.06, type: "sine", filterType: "lowpass", filterFrequency: 1700, release: 0.06, attack: 0.02 },
+          { frequency: 392, duration: 0.12, gain: 0.14, time: 0.12, type: "sine", filterType: "lowpass", filterFrequency: 1800, release: 0.08, attack: 0.02 },
+        ],
+        miss: [
+          { frequency: 170, endFrequency: 140, duration: 0.18, gain: 0.16, type: "sine", filterType: "lowpass", filterFrequency: 260, endFilterFrequency: 140, release: 0.1, attack: 0.02 },
+        ],
+        win: [
+          { frequency: 392, duration: 0.12, gain: 0.16, type: "sine", filterType: "lowpass", filterFrequency: 1700, release: 0.08, attack: 0.02 },
+          { frequency: 493.88, duration: 0.12, gain: 0.14, time: 0.08, type: "sine", filterType: "lowpass", filterFrequency: 1700, release: 0.08, attack: 0.02 },
+          { frequency: 587.33, duration: 0.16, gain: 0.16, time: 0.16, type: "sine", filterType: "lowpass", filterFrequency: 1800, release: 0.1, attack: 0.025 },
+        ],
+        highScore: [
+          { frequency: 329.63, duration: 0.11, gain: 0.14, type: "sine", filterType: "lowpass", filterFrequency: 1800, release: 0.08, attack: 0.02 },
+          { frequency: 440, duration: 0.11, gain: 0.13, time: 0.08, type: "sine", filterType: "lowpass", filterFrequency: 1800, release: 0.08, attack: 0.02 },
+          { frequency: 659.25, duration: 0.16, gain: 0.14, time: 0.16, type: "sine", filterType: "lowpass", filterFrequency: 1900, release: 0.1, attack: 0.025 },
+        ],
+      },
+    };
     SoundManager.instance = this;
   }
 
@@ -1071,57 +1145,99 @@ class SoundManager {
     }
   }
 
-  playPattern(pattern) {
+  canPlay() {
+    const ctx = this.ensureContext();
+    return Boolean(ctx && ctx.state !== "suspended" && this.masterGain && isArcadeSoundEnabled());
+  }
+
+  playSynth(options, baseTime = null) {
     const ctx = this.ensureContext();
     if (!ctx || ctx.state === "suspended" || !this.masterGain || !isArcadeSoundEnabled()) {
       return;
     }
 
-    const startTime = ctx.currentTime;
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    const filterNode = options.filterType ? ctx.createBiquadFilter() : null;
+    const startTime = (baseTime ?? ctx.currentTime) + (options.time || 0);
+    const duration = options.duration || 0.08;
+    const attack = Math.max(0.004, Math.min(duration * 0.4, options.attack || 0.01));
+    const release = Math.max(0.02, Math.min(duration * 0.85, options.release || 0.06));
+    const peakGain = Math.max(0.0001, (options.gain || 1) * this.masterGain.gain.value);
+    const sustainGain = Math.max(peakGain * (options.sustain ?? 0.55), 0.0002);
+    const releaseStart = Math.max(startTime + attack + 0.01, startTime + duration - release);
+
+    oscillator.type = options.type || "square";
+    oscillator.frequency.setValueAtTime(Math.max(1, options.frequency || 440), startTime);
+    if (typeof options.endFrequency === "number") {
+      oscillator.frequency.exponentialRampToValueAtTime(Math.max(1, options.endFrequency), startTime + duration);
+    }
+    if (typeof options.detune === "number") {
+      oscillator.detune.setValueAtTime(options.detune, startTime);
+    }
+
+    if (filterNode) {
+      filterNode.type = options.filterType;
+      filterNode.frequency.setValueAtTime(options.filterFrequency || 1400, startTime);
+      if (typeof options.endFilterFrequency === "number") {
+        filterNode.frequency.exponentialRampToValueAtTime(Math.max(40, options.endFilterFrequency), startTime + duration);
+      }
+      if (typeof options.filterQ === "number") {
+        filterNode.Q.setValueAtTime(options.filterQ, startTime);
+      }
+    }
+
+    gainNode.gain.setValueAtTime(0.0001, startTime);
+    gainNode.gain.linearRampToValueAtTime(peakGain, startTime + attack);
+    gainNode.gain.exponentialRampToValueAtTime(sustainGain, releaseStart);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+    oscillator.connect(filterNode || gainNode);
+    if (filterNode) {
+      filterNode.connect(gainNode);
+    }
+    gainNode.connect(this.masterGain);
+
+    oscillator.onended = () => {
+      oscillator.disconnect();
+      if (filterNode) {
+        filterNode.disconnect();
+      }
+      gainNode.disconnect();
+    };
+
+    oscillator.start(startTime);
+    oscillator.stop(startTime + duration + 0.04);
+  }
+
+  playPattern(pattern) {
+    if (!this.canPlay()) {
+      return;
+    }
+
+    const baseTime = this.context.currentTime;
     pattern.forEach((step) => {
-      const oscillator = ctx.createOscillator();
-      const gainNode = ctx.createGain();
-      const filterNode = step.filterType ? ctx.createBiquadFilter() : null;
-      const time = startTime + (step.time || 0);
-      const duration = step.duration || 0.08;
-      const attack = Math.min(duration * 0.35, step.attack || 0.01);
-      const release = step.release || 0.06;
-      const volume = Math.max(0.0001, (step.gain || 1) * this.masterGain.gain.value);
-      const releaseStart = Math.max(time + attack + 0.01, time + duration - release);
-
-      oscillator.type = step.type || "square";
-      oscillator.frequency.setValueAtTime(Math.max(1, step.frequency || 440), time);
-      if (step.endFrequency) {
-        oscillator.frequency.exponentialRampToValueAtTime(Math.max(1, step.endFrequency), time + duration);
-      }
-      if (typeof step.detune === "number") {
-        oscillator.detune.setValueAtTime(step.detune, time);
-      }
-
-      if (filterNode) {
-        filterNode.type = step.filterType;
-        filterNode.frequency.setValueAtTime(step.filterFrequency || 1400, time);
-        if (step.endFilterFrequency) {
-          filterNode.frequency.exponentialRampToValueAtTime(Math.max(40, step.endFilterFrequency), time + duration);
-        }
-        if (typeof step.filterQ === "number") {
-          filterNode.Q.setValueAtTime(step.filterQ, time);
-        }
-      }
-
-      gainNode.gain.setValueAtTime(0.0001, time);
-      gainNode.gain.linearRampToValueAtTime(volume, time + attack);
-      gainNode.gain.exponentialRampToValueAtTime(Math.max(volume * 0.55, 0.0002), releaseStart);
-      gainNode.gain.exponentialRampToValueAtTime(0.0001, time + duration);
-
-      oscillator.connect(filterNode || gainNode);
-      if (filterNode) {
-        filterNode.connect(gainNode);
-      }
-      gainNode.connect(this.masterGain);
-      oscillator.start(time);
-      oscillator.stop(time + duration + 0.04);
+      this.playSynth(step, baseTime);
     });
+  }
+
+  getGamePattern(game, cue) {
+    const profile = this.gameProfiles[game];
+    if (!profile) {
+      return null;
+    }
+    const pattern = profile[cue];
+    if (!pattern) {
+      return null;
+    }
+    return typeof pattern === "function" ? pattern() : pattern;
+  }
+
+  playGameSound(game, cue) {
+    const pattern = this.getGamePattern(game, cue);
+    if (pattern) {
+      this.playPattern(pattern);
+    }
   }
 
   uiHover() {
@@ -1153,7 +1269,11 @@ class SoundManager {
       ]);
   }
 
-  highScore() {
+  highScore(game) {
+    if (game) {
+      this.playGameSound(game, "highScore");
+      return;
+    }
     this.playPattern([
       { frequency: 392, duration: 0.09, gain: 0.52, type: "triangle", filterType: "lowpass", filterFrequency: 1800, release: 0.05 },
       { frequency: 494, duration: 0.09, gain: 0.48, time: 0.08, type: "triangle", filterType: "lowpass", filterFrequency: 1800, release: 0.05 },
@@ -1161,7 +1281,11 @@ class SoundManager {
     ]);
   }
 
-  startRound() {
+  startRound(game) {
+    if (game) {
+      this.playGameSound(game, "start");
+      return;
+    }
     this.playPattern([
       { frequency: 340, duration: 0.06, gain: 0.4, type: "triangle", filterType: "lowpass", filterFrequency: 980, release: 0.04 },
       { frequency: 500, duration: 0.08, gain: 0.36, time: 0.06, type: "sine", attack: 0.01, release: 0.05 },
@@ -1169,64 +1293,43 @@ class SoundManager {
   }
 
   snakeEat() {
-    this.playPattern([
-      { frequency: 720, duration: 0.05, gain: 0.34, type: "square", release: 0.03 },
-      { frequency: 920, duration: 0.07, gain: 0.24, time: 0.04, type: "triangle", release: 0.04 },
-    ]);
+    this.playGameSound("snake", "eat");
   }
 
   snakeCrash() {
-    this.playPattern([
-      { frequency: 240, endFrequency: 120, duration: 0.2, gain: 0.4, type: "sawtooth", filterType: "lowpass", filterFrequency: 720, endFilterFrequency: 260, attack: 0.01, release: 0.09 },
-      { frequency: 130, endFrequency: 90, duration: 0.24, gain: 0.22, time: 0.05, type: "triangle", filterType: "lowpass", filterFrequency: 420, endFilterFrequency: 180, attack: 0.01, release: 0.12 },
-    ]);
+    this.playGameSound("snake", "lose");
   }
 
   memoryFlip() {
-    this.playPattern([
-      { frequency: 540, duration: 0.04, gain: 0.18, type: "triangle", release: 0.025 },
-    ]);
+    this.playGameSound("memory", "flip");
   }
 
   memoryMatch() {
-    this.playPattern([
-      { frequency: 520, duration: 0.05, gain: 0.28, type: "triangle", release: 0.03 },
-      { frequency: 700, duration: 0.07, gain: 0.22, time: 0.04, type: "triangle", release: 0.04 },
-    ]);
+    this.playGameSound("memory", "match");
   }
 
   memoryMiss() {
-    this.playPattern([
-      { frequency: 250, endFrequency: 190, duration: 0.12, gain: 0.22, type: "sine", filterType: "lowpass", filterFrequency: 520, endFilterFrequency: 260, release: 0.06 },
-    ]);
+    this.playGameSound("memory", "miss");
   }
 
   memoryWin() {
-    this.playPattern([
-      { frequency: 392, duration: 0.08, gain: 0.44, type: "triangle", filterType: "lowpass", filterFrequency: 1800, release: 0.05 },
-      { frequency: 494, duration: 0.08, gain: 0.4, time: 0.08, type: "triangle", filterType: "lowpass", filterFrequency: 1800, release: 0.05 },
-      { frequency: 588, duration: 0.12, gain: 0.46, time: 0.16, type: "triangle", filterType: "lowpass", filterFrequency: 1800, release: 0.08 },
-    ]);
+    this.playGameSound("memory", "win");
+  }
+
+  pongPaddle() {
+    this.playGameSound("pong", "paddle");
+  }
+
+  pongWall() {
+    this.playGameSound("pong", "wall");
   }
 
   pongScore() {
-    this.playPattern([
-      { frequency: 310, duration: 0.05, gain: 0.28, type: "triangle", release: 0.03 },
-      { frequency: 380, duration: 0.07, gain: 0.18, time: 0.05, type: "square", release: 0.04 },
-    ]);
+    this.playGameSound("pong", "score");
   }
 
   pongWin(isWinner) {
-    this.playPattern(isWinner
-      ? [
-        { frequency: 392, duration: 0.09, gain: 0.46, type: "triangle", filterType: "lowpass", filterFrequency: 1800, release: 0.05 },
-        { frequency: 494, duration: 0.09, gain: 0.44, time: 0.09, type: "triangle", filterType: "lowpass", filterFrequency: 1800, release: 0.05 },
-        { frequency: 588, duration: 0.14, gain: 0.48, time: 0.18, type: "triangle", filterType: "lowpass", filterFrequency: 1800, release: 0.08 },
-      ]
-      : [
-        { frequency: 280, endFrequency: 210, duration: 0.14, gain: 0.28, type: "triangle", filterType: "lowpass", filterFrequency: 620, endFilterFrequency: 260, attack: 0.01, release: 0.07 },
-        { frequency: 190, endFrequency: 140, duration: 0.18, gain: 0.2, time: 0.08, type: "sine", filterType: "lowpass", filterFrequency: 420, endFilterFrequency: 180, attack: 0.01, release: 0.09 },
-      ]);
+    this.playGameSound("pong", isWinner ? "win" : "lose");
   }
 }
 
@@ -1299,6 +1402,7 @@ function createArcadeResultModal(modalId) {
   };
 
   [elements.primary, elements.secondary].forEach((button) => {
+    button.dataset.arcadeAudioBound = "true";
     button.addEventListener("pointerenter", () => arcadeAudio.uiHover());
   });
 
@@ -1594,7 +1698,7 @@ function initSnakePage() {
     draw(false);
     startGameLoop();
     canvas.focus();
-    arcadeAudio.startRound();
+    arcadeAudio.startRound("snake");
   }
 
   function openIntroScreen() {
@@ -1626,7 +1730,7 @@ function initSnakePage() {
     renderOverlay({ visible: false });
     showSnakeResultModal();
     if (hasNewHighScore) {
-      arcadeAudio.highScore();
+      arcadeAudio.highScore("snake");
     } else {
       arcadeAudio.snakeCrash();
     }
@@ -1855,6 +1959,8 @@ function initPongPage() {
     selfName: readStoredName(),
     pendingAutoJoinRoomCode: getRoomCodeFromQuery(),
     lastResultXp: 0,
+    lastBallVector: { x: 0, y: 0 },
+    lastImpactAt: 0,
   };
 
   function getDefaultServerUrl() {
@@ -2031,6 +2137,8 @@ function initPongPage() {
     state.winner = null;
     state.localPaddleY = (state.height - state.paddleHeight) / 2;
     state.lastSentY = null;
+    state.lastBallVector = { x: 0, y: 0 };
+    state.lastImpactAt = 0;
   }
 
   function updateMatchOverlay() {
@@ -2174,6 +2282,11 @@ function initPongPage() {
       x: Number(message.ball && message.ball.x) || state.width / 2,
       y: Number(message.ball && message.ball.y) || state.height / 2,
     };
+    const currentBallVector = {
+      x: state.ball.x - previousBall.x,
+      y: state.ball.y - previousBall.y,
+    };
+    state.lastBallVector = currentBallVector;
     state.running = Boolean(message.running);
     state.winner = message.winner || null;
     state.statusText = mapArcadeServerMessage(message.status || state.statusText);
@@ -2199,9 +2312,42 @@ function initPongPage() {
     const scoreChanged =
       state.scores.left !== previousScores.left ||
       state.scores.right !== previousScores.right;
+    const canTriggerImpact = previousRunning && state.running && !previousWinner && !state.winner && !scoreChanged;
+    if (canTriggerImpact) {
+      const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+      const horizontalBounce =
+        Math.abs(previousBallVector.x) > 1 &&
+        Math.abs(currentBallVector.x) > 1 &&
+        Math.sign(previousBallVector.x) !== Math.sign(currentBallVector.x);
+      const verticalBounce =
+        Math.abs(previousBallVector.y) > 1 &&
+        Math.abs(currentBallVector.y) > 1 &&
+        Math.sign(previousBallVector.y) !== Math.sign(currentBallVector.y);
+      const nearSide =
+        previousBall.x <= 56 ||
+        previousBall.x >= state.width - 56 ||
+        state.ball.x <= 56 ||
+        state.ball.x >= state.width - 56;
+      const nearWall =
+        previousBall.y <= state.ballRadius + 12 ||
+        previousBall.y >= state.height - state.ballRadius - 12 ||
+        state.ball.y <= state.ballRadius + 12 ||
+        state.ball.y >= state.height - state.ballRadius - 12;
+
+      if (now - state.lastImpactAt > 55) {
+        if (horizontalBounce && nearSide) {
+          arcadeAudio.pongPaddle();
+          state.lastImpactAt = now;
+        } else if (verticalBounce && nearWall) {
+          arcadeAudio.pongWall();
+          state.lastImpactAt = now;
+        }
+      }
+    }
+
     if (!previousRunning && state.running && state.players.leftConnected && state.players.rightConnected) {
       recordPongMatchStart();
-      arcadeAudio.startRound();
+      arcadeAudio.startRound("pong");
     }
     if (previousRunning && !previousWinner && state.winner && state.role) {
       recordPongMatchResult(state.winner === state.role);
@@ -2877,7 +3023,7 @@ function initMemoryPage() {
     state.phase = "running";
     setMemoryStatus("memory.status.running", "Laeuft");
     renderOverlay({ visible: false });
-    arcadeAudio.startRound();
+    arcadeAudio.startRound("memory");
   }
 
   function finishRun() {
@@ -2893,7 +3039,7 @@ function initMemoryPage() {
     renderOverlay({ visible: false });
     showMemoryResultModal();
     if (hasNewBest) {
-      arcadeAudio.highScore();
+      arcadeAudio.highScore("memory");
     } else {
       arcadeAudio.memoryWin();
     }
