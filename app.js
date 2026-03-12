@@ -129,9 +129,33 @@ function getSnakeHighScore() {
   return readStoredNumber(arcadeStorageKeys.snakeScore) ?? 0;
 }
 
+function storeSnakeHighScore(score) {
+  const safeScore = sanitizeArcadeStatNumber(score);
+  if (safeScore <= getSnakeHighScore()) {
+    return false;
+  }
+  writeStoredNumber(arcadeStorageKeys.snakeScore, safeScore);
+  syncStoredRecords();
+  return true;
+}
+
 function getMemoryBestMoves() {
   const storedValue = readStoredNumber(arcadeStorageKeys.memoryBestMoves);
   return storedValue !== null && storedValue > 0 ? storedValue : null;
+}
+
+function storeMemoryBestMoves(moves) {
+  const safeMoves = sanitizeArcadeBestMoves(moves);
+  if (safeMoves === null) {
+    return false;
+  }
+  const currentBestMoves = getMemoryBestMoves();
+  if (currentBestMoves !== null && safeMoves >= currentBestMoves) {
+    return false;
+  }
+  writeStoredNumber(arcadeStorageKeys.memoryBestMoves, safeMoves);
+  syncStoredRecords();
+  return true;
 }
 
 function createDefaultArcadeStats() {
@@ -352,13 +376,15 @@ function getArcadeAvatarInitials(name) {
 
 function getArcadeLevelData(stats, memoryBestMoves) {
   const memoryEfficiency = memoryBestMoves === null ? 0 : Math.max(0, 26 - memoryBestMoves) * 35;
-  const xp = (
-    stats.totalStarts * 40
-    + stats.totalWins * 140
-    + stats.snake.highScore * 28
+  const xp = Math.round(
+    stats.totalStarts * 35
+    + stats.totalWins * 120
+    + stats.snake.totalScore * 2.6
+    + stats.snake.highScore * 12
+    + stats.memory.plays * 24
     + stats.memory.wins * 110
+    + stats.pong.matches * 35
     + stats.pong.wins * 180
-    + stats.pong.matches * 20
     + memoryEfficiency
   );
   const levelSize = 450;
@@ -1097,6 +1123,137 @@ document.addEventListener("keydown", () => arcadeAudio.unlock());
 window.addEventListener("storage", () => syncStoredRecords());
 initGlobalArcadeUi();
 
+function getArcadeXpGain(previousStats, previousBestMoves, nextStats, nextBestMoves) {
+  const previousXp = getArcadeLevelData(previousStats, previousBestMoves).xp;
+  const nextXp = getArcadeLevelData(nextStats, nextBestMoves).xp;
+  return Math.max(0, nextXp - previousXp);
+}
+
+function formatArcadeXpValue(xpValue) {
+  return `+ ${formatArcadeNumber(Math.max(0, sanitizeArcadeStatNumber(xpValue)))} XP`;
+}
+
+function createArcadeResultModal(modalId) {
+  const existingModal = document.getElementById(modalId);
+  if (existingModal) {
+    existingModal.remove();
+  }
+
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay";
+  overlay.id = modalId;
+  overlay.hidden = true;
+  overlay.setAttribute("aria-hidden", "true");
+  overlay.setAttribute("role", "dialog");
+  overlay.setAttribute("aria-modal", "true");
+  overlay.innerHTML = `
+    <div class="result-card state-lose">
+      <div class="result-header">
+        <span class="result-icon" aria-hidden="true">TRY</span>
+        <h2 class="result-title">Game Over</h2>
+      </div>
+      <p class="result-copy">Jump right back in and push your next run even higher.</p>
+      <div class="result-body">
+        <div class="score-display">
+          <span class="label">Final Score</span>
+          <span class="value">0</span>
+        </div>
+        <div class="xp-display">
+          <span class="label">Arcade XP</span>
+          <span class="value xp-text">+ 0 XP</span>
+        </div>
+      </div>
+      <div class="result-actions">
+        <button class="button button-secondary btn-outline btn-menu" type="button">${t("common.backToMenu", {}, "Back to main menu")}</button>
+        <button class="button button-primary btn-play-again" type="button">${t("common.playAgain", {}, "Play again")}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  const elements = {
+    overlay,
+    card: overlay.querySelector(".result-card"),
+    icon: overlay.querySelector(".result-icon"),
+    title: overlay.querySelector(".result-title"),
+    copy: overlay.querySelector(".result-copy"),
+    scoreLabel: overlay.querySelector(".score-display .label"),
+    scoreValue: overlay.querySelector(".score-display .value"),
+    xpLabel: overlay.querySelector(".xp-display .label"),
+    xpValue: overlay.querySelector(".xp-display .value"),
+    primary: overlay.querySelector(".btn-play-again"),
+    secondary: overlay.querySelector(".btn-menu"),
+  };
+
+  let hideTimeoutId = 0;
+  let activeConfig = null;
+
+  function applyConfig(config) {
+    activeConfig = config;
+    elements.card.classList.remove("state-win", "state-lose");
+    elements.card.classList.add(config.state === "win" ? "state-win" : "state-lose");
+    elements.icon.textContent = config.icon || (config.state === "win" ? "WIN" : "TRY");
+    elements.title.textContent = config.title || t("snake.status.gameOver", {}, "Game Over");
+    elements.copy.textContent = config.message || "";
+    elements.scoreLabel.textContent = config.scoreLabel || t("common.result.finalScore", {}, "Final Score");
+    elements.scoreValue.textContent = config.scoreValue || "0";
+    elements.xpLabel.textContent = config.xpLabel || t("common.result.arcadeXp", {}, "Arcade XP");
+    elements.xpValue.textContent = config.xpValue || formatArcadeXpValue(0);
+    elements.primary.textContent = config.primaryLabel || t("common.playAgain", {}, "Play again");
+    elements.secondary.textContent = config.secondaryLabel || t("common.backToMenu", {}, "Back to main menu");
+    elements.primary.disabled = Boolean(config.primaryDisabled);
+  }
+
+  function show(config) {
+    window.clearTimeout(hideTimeoutId);
+    const wasVisible = overlay.classList.contains("is-visible");
+    applyConfig(config || {});
+    overlay.hidden = false;
+    overlay.setAttribute("aria-hidden", "false");
+    document.body.classList.add("modal-open");
+    window.requestAnimationFrame(() => {
+      overlay.classList.add("is-visible");
+      if (!wasVisible) {
+        elements.primary.focus();
+      }
+    });
+  }
+
+  function hide() {
+    window.clearTimeout(hideTimeoutId);
+    overlay.classList.remove("is-visible");
+    overlay.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("modal-open");
+    hideTimeoutId = window.setTimeout(() => {
+      overlay.hidden = true;
+    }, 220);
+  }
+
+  elements.primary.addEventListener("click", () => {
+    if (elements.primary.disabled) {
+      return;
+    }
+    if (activeConfig && typeof activeConfig.onPrimary === "function") {
+      activeConfig.onPrimary();
+    }
+  });
+
+  elements.secondary.addEventListener("click", () => {
+    if (activeConfig && typeof activeConfig.onSecondary === "function") {
+      activeConfig.onSecondary();
+      return;
+    }
+    window.location.href = "index.html";
+  });
+
+  return {
+    show,
+    hide,
+    isVisible() {
+      return overlay.classList.contains("is-visible");
+    },
+  };
+}
 function initSnakePage() {
   const canvas = document.querySelector("#snake-canvas");
   if (!canvas) {
@@ -1114,6 +1271,7 @@ function initSnakePage() {
     overlayMeta: document.querySelector("#snake-overlay-meta"),
     overlayAction: document.querySelector("#snake-overlay-action"),
   };
+  const resultModal = createArcadeResultModal("snake-result-modal");
   const state = {
     gridSize: 20,
     tileSize: canvas.width / 20,
@@ -1132,6 +1290,7 @@ function initSnakePage() {
     lastStatusFallback: "Bereit",
     lastStatusVars: {},
     lastRunWasHighScore: false,
+    lastResultXp: 0,
   };
 
   function setSnakeStatus(key, fallback, variables) {
@@ -1179,6 +1338,24 @@ function initSnakePage() {
     elements.overlayText.textContent = options.text;
     elements.overlayMeta.textContent = options.meta || getOverlayRecordText();
     elements.overlayAction.textContent = options.actionLabel || t("snake.overlay.start", {}, "Spiel starten");
+  }
+
+  function showSnakeResultModal() {
+    resultModal.show({
+      state: state.lastRunWasHighScore ? "win" : "lose",
+      icon: state.lastRunWasHighScore ? "ACE" : "TRY",
+      title: state.lastRunWasHighScore ? t("snake.status.highscore", {}, "Neuer Highscore") : t("snake.status.gameOver", {}, "Game Over"),
+      message: state.lastRunWasHighScore
+        ? t("snake.finish.highscore", { score: state.score }, `Starker Lauf. Du hast ${state.score} Punkte erreicht.`)
+        : t("snake.finish.normal", { score: state.score }, `Dein Lauf endet bei ${state.score} Punkten. Versuch es direkt noch einmal.`),
+      scoreLabel: t("common.result.finalScore", {}, "Final Score"),
+      scoreValue: formatArcadeNumber(state.score),
+      xpLabel: t("common.result.arcadeXp", {}, "Arcade XP"),
+      xpValue: formatArcadeXpValue(state.lastResultXp),
+      primaryLabel: t("common.playAgain", {}, "Play again"),
+      secondaryLabel: t("common.backToMenu", {}, "Back to main menu"),
+      onPrimary: () => startRun(),
+    });
   }
 
   function draw(gameOver) {
@@ -1236,6 +1413,7 @@ function initSnakePage() {
   function refreshSnakeLanguage() {
     setSnakeStatus(state.lastStatusKey, state.lastStatusFallback, state.lastStatusVars);
     if (state.phase === "intro") {
+      resultModal.hide();
       renderOverlay({
         visible: true,
         title: t("snake.overlay.title", {}, "Bereit fuer den Start"),
@@ -1245,15 +1423,8 @@ function initSnakePage() {
       });
     }
     if (state.phase === "gameover") {
-      renderOverlay({
-        visible: true,
-        title: state.lastRunWasHighScore ? t("snake.status.highscore", {}, "Neuer Highscore") : t("snake.status.gameOver", {}, "Game Over"),
-        text: state.lastRunWasHighScore
-          ? t("snake.finish.highscore", { score: state.score }, `Starker Lauf. Du hast ${state.score} Punkte erreicht.`)
-          : t("snake.finish.normal", { score: state.score }, `Dein Lauf endet bei ${state.score} Punkten. Versuch es direkt noch einmal.`),
-        meta: getOverlayRecordText(),
-        actionLabel: t("snake.overlay.replay", {}, "Nochmal spielen"),
-      });
+      renderOverlay({ visible: false });
+      showSnakeResultModal();
     }
     draw(state.phase === "gameover");
   }
@@ -1292,6 +1463,7 @@ function initSnakePage() {
   function startRun(initialDirection) {
     arcadeAudio.unlock();
     prepareRound();
+    resultModal.hide();
     recordArcadeStart("snake");
     if (initialDirection) {
       state.direction = initialDirection;
@@ -1307,6 +1479,7 @@ function initSnakePage() {
 
   function openIntroScreen() {
     prepareRound();
+    resultModal.hide();
     state.phase = "intro";
     setSnakeStatus("snake.status.ready", "Bereit");
     renderOverlay({
@@ -1319,22 +1492,19 @@ function initSnakePage() {
   }
 
   function finishRun() {
+    const previousStats = getArcadeStats();
+    const previousBestMoves = getMemoryBestMoves();
     const hasNewHighScore = storeSnakeHighScore(state.score);
     recordSnakeFinish(state.score);
+    const nextStats = getArcadeStats();
+    state.lastResultXp = getArcadeXpGain(previousStats, previousBestMoves, nextStats, getMemoryBestMoves());
     state.phase = "gameover";
     state.lastRunWasHighScore = hasNewHighScore;
     setSnakeStatus(hasNewHighScore ? "snake.status.highscore" : "snake.status.gameOver", hasNewHighScore ? "Neuer Highscore" : "Game Over");
     stopGame();
     draw(true);
-    renderOverlay({
-      visible: true,
-      title: hasNewHighScore ? t("snake.status.highscore", {}, "Neuer Highscore") : t("snake.status.gameOver", {}, "Game Over"),
-      text: hasNewHighScore
-        ? t("snake.finish.highscore", { score: state.score }, `Starker Lauf. Du hast ${state.score} Punkte erreicht.`)
-        : t("snake.finish.normal", { score: state.score }, `Dein Lauf endet bei ${state.score} Punkten. Versuch es direkt noch einmal.`),
-      meta: getOverlayRecordText(),
-      actionLabel: t("snake.overlay.replay", {}, "Nochmal spielen"),
-    });
+    renderOverlay({ visible: false });
+    showSnakeResultModal();
     arcadeAudio.snakeCrash();
   }
 
@@ -1489,6 +1659,7 @@ function initPongPage() {
     matchText: document.querySelector("#pong-match-text"),
     matchAction: document.querySelector("#pong-match-action"),
   };
+  const resultModal = createArcadeResultModal("pong-result-modal");
 
   function normalizePlayerName(value) {
     return String(value || "")
@@ -1559,6 +1730,7 @@ function initPongPage() {
     disconnectReason: "",
     selfName: readStoredName(),
     pendingAutoJoinRoomCode: getRoomCodeFromQuery(),
+    lastResultXp: 0,
   };
 
   function getDefaultServerUrl() {
@@ -1712,6 +1884,8 @@ function initPongPage() {
   }
 
   function resetRoomView() {
+    resultModal.hide();
+    state.lastResultXp = 0;
     state.roomCode = "";
     state.role = null;
     state.players = {
@@ -1736,24 +1910,38 @@ function initPongPage() {
   }
 
   function updateMatchOverlay() {
-    if (!elements.matchOverlay || !elements.matchTitle || !elements.matchText || !elements.matchAction) {
-      return;
+    if (elements.matchOverlay) {
+      elements.matchOverlay.classList.add("is-hidden");
     }
 
     const bothPlayers = state.players.leftConnected && state.players.rightConnected;
     const showOverlay = Boolean(state.roomCode && state.winner && bothPlayers);
-    elements.matchOverlay.classList.toggle("is-hidden", !showOverlay);
     if (!showOverlay) {
+      resultModal.hide();
       return;
     }
 
     const winnerName = getSideName(state.winner) || (state.winner === "left" ? t("pong.side.left", {}, "Links") : t("pong.side.right", {}, "Rechts"));
     const youWon = state.role ? state.role === state.winner : false;
-    elements.matchTitle.textContent = youWon ? t("pong.overlay.winTitle", {}, "Du hast gewonnen") : t("pong.overlay.loseTitle", { winnerName }, `${winnerName} gewinnt dieses Match`);
-    elements.matchText.textContent = youWon
-      ? "Starke Runde. Der Raum bleibt offen, also koennt ihr direkt die Revanche starten."
-      : `${winnerName} hat diese Runde geholt. Wenn beide verbunden bleiben, startet die Revanche sofort im selben Raum.`;
-    elements.matchAction.disabled = !isConnected() || !state.roomCode || !bothPlayers;
+    const playerScore = state.role === "right" ? state.scores.right : state.scores.left;
+    const opponentScore = state.role === "right" ? state.scores.left : state.scores.right;
+
+    resultModal.show({
+      state: youWon ? "win" : "lose",
+      icon: youWon ? "WIN" : "DUEL",
+      title: youWon ? t("pong.overlay.winTitle", {}, "Du hast gewonnen") : t("pong.overlay.loseTitle", { winnerName }, `${winnerName} gewinnt dieses Match`),
+      message: youWon
+        ? t("pong.overlay.winText", {}, "Starke Runde. Der Raum bleibt offen, damit du direkt in die naechste Revanche springen kannst.")
+        : t("pong.overlay.loseText", { winnerName }, `${winnerName} hat diese Runde geholt. Wenn beide verbunden bleiben, startet die Revanche sofort im selben Raum.`),
+      scoreLabel: t("common.result.matchScore", {}, "Match Score"),
+      scoreValue: `${formatArcadeNumber(playerScore)} - ${formatArcadeNumber(opponentScore)}`,
+      xpLabel: t("common.result.arcadeXp", {}, "Arcade XP"),
+      xpValue: formatArcadeXpValue(state.lastResultXp),
+      primaryLabel: t("pong.button.rematch", {}, "Rematch starten"),
+      secondaryLabel: t("common.backToMenu", {}, "Back to main menu"),
+      primaryDisabled: !isConnected() || !state.roomCode || !bothPlayers,
+      onPrimary: () => requestRematch(),
+    });
   }
 
   function updateInterface() {
@@ -1893,6 +2081,9 @@ function initPongPage() {
     }
     if (previousRunning && !previousWinner && state.winner && state.role) {
       recordPongMatchResult(state.winner === state.role);
+      state.lastResultXp = getArcadeXpGain(previousStats, previousBestMoves, getArcadeStats(), getMemoryBestMoves());
+    } else if (!state.winner) {
+      state.lastResultXp = 0;
     }
     if (!previousWinner && state.winner) {
       arcadeAudio.pongWin(Boolean(state.role) ? state.winner === state.role : true);
@@ -2169,6 +2360,7 @@ function initPongPage() {
 
   function requestRematch() {
     if (isConnected() && state.roomCode) {
+      resultModal.hide();
       sendMessage({ type: "reset_match" });
       state.statusText = state.winner ? t("pong.local.rematchRequested", {}, "Rematch angefragt") : t("pong.local.resetRequested", {}, "Neue Runde angefragt");
       arcadeAudio.uiConfirm();
@@ -2402,6 +2594,7 @@ function initMemoryPage() {
     overlayMeta: document.querySelector("#memory-overlay-meta"),
     overlayAction: document.querySelector("#memory-overlay-action"),
   };
+  const resultModal = createArcadeResultModal("memory-result-modal");
   const symbols = ["JOY", "PIX", "RAM", "DOS", "WAV", "VHS", "ZAP", "WIN"];
   const state = {
     cards: [],
@@ -2415,6 +2608,7 @@ function initMemoryPage() {
     lastStatusFallback: "Bereit",
     lastStatusVars: {},
     lastRunWasBest: false,
+    lastResultXp: 0,
   };
 
   function setMemoryStatus(key, fallback, variables) {
@@ -2448,12 +2642,31 @@ function initMemoryPage() {
     elements.overlayAction.textContent = options.actionLabel || t("memory.overlay.start", {}, "Runde starten");
   }
 
+  function showMemoryResultModal() {
+    resultModal.show({
+      state: "win",
+      icon: state.lastRunWasBest ? "BEST" : "WIN",
+      title: state.lastRunWasBest ? t("memory.status.newBest", {}, "Neuer Bestwert") : t("memory.status.done", {}, "Geschafft"),
+      message: state.lastRunWasBest
+        ? t("memory.finish.newBest", { moves: state.moves }, `Starker Run. Du hast alle Paare in ${state.moves} Zuegen geloest.`)
+        : t("memory.finish.normal", { moves: state.moves }, `Runde beendet. Du hast ${state.moves} Zuege gebraucht.`),
+      scoreLabel: t("common.result.finalMoves", {}, "Final Moves"),
+      scoreValue: formatArcadeNumber(state.moves),
+      xpLabel: t("common.result.arcadeXp", {}, "Arcade XP"),
+      xpValue: formatArcadeXpValue(state.lastResultXp),
+      primaryLabel: t("common.playAgain", {}, "Play again"),
+      secondaryLabel: t("common.backToMenu", {}, "Back to main menu"),
+      onPrimary: () => startRun(),
+    });
+  }
+
   function refreshMemoryLanguage() {
     setMemoryStatus(state.lastStatusKey, state.lastStatusFallback, state.lastStatusVars);
     grid.querySelectorAll(".memory-card").forEach((card) => {
       card.setAttribute("aria-label", t("memory.card.hidden", {}, "Verdeckte Karte"));
     });
     if (state.phase === "intro") {
+      resultModal.hide();
       renderOverlay({
         visible: true,
         title: t("memory.overlay.title", {}, "Bereit fuer den Run"),
@@ -2463,15 +2676,8 @@ function initMemoryPage() {
       });
     }
     if (state.phase === "won") {
-      renderOverlay({
-        visible: true,
-        title: state.lastRunWasBest ? t("memory.status.newBest", {}, "Neuer Bestwert") : t("memory.status.done", {}, "Geschafft"),
-        text: state.lastRunWasBest
-          ? t("memory.finish.newBest", { moves: state.moves }, `Starker Run. Du hast alle Paare in ${state.moves} Zuegen geloest.`)
-          : t("memory.finish.normal", { moves: state.moves }, `Runde beendet. Du hast ${state.moves} Zuege gebraucht.`),
-        meta: getOverlayRecordText(),
-        actionLabel: t("memory.overlay.replay", {}, "Nochmal spielen"),
-      });
+      renderOverlay({ visible: false });
+      showMemoryResultModal();
     }
   }
 
@@ -2528,6 +2734,7 @@ function initMemoryPage() {
 
   function openIntroScreen() {
     prepareBoard();
+    resultModal.hide();
     state.phase = "intro";
     setMemoryStatus("memory.status.ready", "Bereit");
     renderOverlay({
@@ -2542,6 +2749,7 @@ function initMemoryPage() {
   function startRun() {
     arcadeAudio.unlock();
     prepareBoard();
+    resultModal.hide();
     recordArcadeStart("memory");
     state.phase = "running";
     setMemoryStatus("memory.status.running", "Laeuft");
@@ -2550,20 +2758,17 @@ function initMemoryPage() {
   }
 
   function finishRun() {
+    const previousStats = getArcadeStats();
+    const previousBestMoves = getMemoryBestMoves();
     const hasNewBest = storeMemoryBestMoves(state.moves);
     recordMemoryWin(state.moves);
+    const nextStats = getArcadeStats();
+    state.lastResultXp = getArcadeXpGain(previousStats, previousBestMoves, nextStats, getMemoryBestMoves());
     state.phase = "won";
     state.lastRunWasBest = hasNewBest;
     setMemoryStatus(hasNewBest ? "memory.status.newBest" : "memory.status.done", hasNewBest ? "Neuer Bestwert" : "Geschafft");
-    renderOverlay({
-      visible: true,
-      title: hasNewBest ? t("memory.status.newBest", {}, "Neuer Bestwert") : t("memory.status.done", {}, "Geschafft"),
-      text: hasNewBest
-        ? t("memory.finish.newBest", { moves: state.moves }, `Starker Run. Du hast alle Paare in ${state.moves} Zuegen geloest.`)
-        : t("memory.finish.normal", { moves: state.moves }, `Runde beendet. Du hast ${state.moves} Zuege gebraucht.`),
-      meta: getOverlayRecordText(),
-      actionLabel: t("memory.overlay.replay", {}, "Nochmal spielen"),
-    });
+    renderOverlay({ visible: false });
+    showMemoryResultModal();
     arcadeAudio.memoryWin();
   }
 
@@ -2629,7 +2834,3 @@ function initMemoryPage() {
 initSnakePage();
 initPongPage();
 initMemoryPage();
-
-
-
-

@@ -24,6 +24,11 @@
       'common.navigationAria': 'Games navigation',
       'common.skipToContent': 'Skip to content',
       'common.backToMenu': 'Back to main menu',
+      'common.playAgain': 'Play again',
+      'common.result.arcadeXp': 'Arcade XP',
+      'common.result.finalScore': 'Final Score',
+      'common.result.finalMoves': 'Final Moves',
+      'common.result.matchScore': 'Match Score',
       'common.soundButton.on': 'Sound: ON',
       'common.soundButton.off': 'Sound: OFF',
       'common.soundLabel.on': 'ON',
@@ -185,6 +190,11 @@
       'common.navigationAria': 'Navigation des jeux',
       'common.skipToContent': 'Aller au contenu',
       'common.backToMenu': 'Retour au menu principal',
+      'common.playAgain': 'Rejouer',
+      'common.result.arcadeXp': 'XP Arcade',
+      'common.result.finalScore': 'Score final',
+      'common.result.finalMoves': 'Coups finaux',
+      'common.result.matchScore': 'Score du match',
       'common.soundButton.on': 'Son : ON',
       'common.soundButton.off': 'Son : OFF',
       'common.soundLabel.on': 'ON',
@@ -784,7 +794,3 @@
     refreshAll();
   }
 }());
-
-
-
-
