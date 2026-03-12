@@ -1,4 +1,4 @@
-const yearNode = document.querySelector("#year");
+﻿const yearNode = document.querySelector("#year");
 
 if (yearNode) {
   yearNode.textContent = String(new Date().getFullYear());
@@ -6,6 +6,36 @@ if (yearNode) {
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
+}
+
+const arcadeI18n = window.arcadeI18n || null;
+
+function t(key, variables, fallback) {
+  if (arcadeI18n && typeof arcadeI18n.t === "function") {
+    return arcadeI18n.t(key, variables, fallback || key);
+  }
+  return String(fallback || key).replace(/\{(\w+)\}/g, function (_, name) {
+    if (!variables || !(name in variables)) {
+      return "";
+    }
+    return String(variables[name]);
+  });
+}
+
+function mapArcadeServerMessage(message) {
+  if (!message) {
+    return "";
+  }
+  if (arcadeI18n && typeof arcadeI18n.mapServerMessage === "function") {
+    return arcadeI18n.mapServerMessage(message);
+  }
+  return message;
+}
+
+function registerArcadeUiRefresh(listener) {
+  if (arcadeI18n && typeof arcadeI18n.registerRefresh === "function") {
+    arcadeI18n.registerRefresh(listener);
+  }
 }
 
 const arcadeStorageKeys = {
@@ -185,7 +215,7 @@ function getStoredArcadeProfileName() {
 }
 
 function getArcadeProfileName() {
-  return getStoredArcadeProfileName() || "Gast";
+  return getStoredArcadeProfileName() || t("common.guest", {}, "Gast");
 }
 
 function setArcadeProfileName(name) {
@@ -333,12 +363,14 @@ function syncStoredRecords() {
   });
 
   const soundEnabled = isArcadeSoundEnabled();
+  const soundButtonText = soundEnabled ? t("common.soundButton.on", {}, "Sound: AN") : t("common.soundButton.off", {}, "Sound: AUS");
+  const soundLabelText = soundEnabled ? t("common.soundLabel.on", {}, "AN") : t("common.soundLabel.off", {}, "AUS");
   document.querySelectorAll('[data-arcade-sound-toggle]').forEach((button) => {
-    button.textContent = soundEnabled ? "Sound: AN" : "Sound: AUS";
+    button.textContent = soundButtonText;
     button.setAttribute('aria-pressed', soundEnabled ? 'true' : 'false');
   });
   document.querySelectorAll('[data-arcade-sound-label]').forEach((node) => {
-    node.textContent = soundEnabled ? "AN" : "AUS";
+    node.textContent = soundLabelText;
   });
 
   const stats = getArcadeStats();
@@ -403,6 +435,7 @@ function initGlobalArcadeUi() {
 }
 
 syncStoredRecords();
+registerArcadeUiRefresh(syncStoredRecords);
 function createArcadeAudio() {
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
   let context = null;
@@ -572,7 +605,18 @@ function initSnakePage() {
     minDelay: 72,
     speedStep: 6,
     phase: "intro",
+    lastStatusKey: "snake.status.ready",
+    lastStatusFallback: "Bereit",
+    lastStatusVars: {},
+    lastRunWasHighScore: false,
   };
+
+  function setSnakeStatus(key, fallback, variables) {
+    state.lastStatusKey = key;
+    state.lastStatusFallback = fallback;
+    state.lastStatusVars = variables || {};
+    statusEl.textContent = t(key, state.lastStatusVars, fallback);
+  }
 
   function randomPosition() {
     return Math.floor(Math.random() * state.gridSize);
@@ -592,7 +636,9 @@ function initSnakePage() {
 
   function getOverlayRecordText() {
     const bestScore = getSnakeHighScore();
-    return bestScore > 0 ? `Bestwert: ${bestScore}` : "Bestwert: Noch offen";
+    return bestScore > 0
+      ? t("snake.best.value", { value: bestScore }, `Bestwert: ${bestScore}`)
+      : t("snake.best.open", {}, "Bestwert: Noch offen");
   }
 
   function renderOverlay(options) {
@@ -609,7 +655,7 @@ function initSnakePage() {
     elements.overlayTitle.textContent = options.title;
     elements.overlayText.textContent = options.text;
     elements.overlayMeta.textContent = options.meta || getOverlayRecordText();
-    elements.overlayAction.textContent = options.actionLabel || "Spiel starten";
+    elements.overlayAction.textContent = options.actionLabel || t("snake.overlay.start", {}, "Spiel starten");
   }
 
   function draw(gameOver) {
@@ -657,10 +703,35 @@ function initSnakePage() {
       context.fillStyle = "#f7f4ff";
       context.textAlign = "center";
       context.font = 'bold 30px "Trebuchet MS"';
-      context.fillText("Game Over", canvas.width / 2, canvas.height / 2 - 14);
+      context.fillText(t("snake.status.gameOver", {}, "Game Over"), canvas.width / 2, canvas.height / 2 - 14);
       context.font = '18px "Trebuchet MS"';
-      context.fillText("Leertaste oder Neu starten", canvas.width / 2, canvas.height / 2 + 20);
+      context.fillText(t("snake.canvas.hint", {}, "Leertaste oder Neu starten"), canvas.width / 2, canvas.height / 2 + 20);
     }
+  }
+
+  function refreshSnakeLanguage() {
+    setSnakeStatus(state.lastStatusKey, state.lastStatusFallback, state.lastStatusVars);
+    if (state.phase === "intro") {
+      renderOverlay({
+        visible: true,
+        title: t("snake.overlay.title", {}, "Bereit fuer den Start"),
+        text: t("snake.overlay.text", {}, "Starte eine Runde und jage einen moeglichst langen neon-gruenen Lauf."),
+        meta: getOverlayRecordText(),
+        actionLabel: t("snake.overlay.start", {}, "Spiel starten"),
+      });
+    }
+    if (state.phase === "gameover") {
+      renderOverlay({
+        visible: true,
+        title: state.lastRunWasHighScore ? t("snake.status.highscore", {}, "Neuer Highscore") : t("snake.status.gameOver", {}, "Game Over"),
+        text: state.lastRunWasHighScore
+          ? t("snake.finish.highscore", { score: state.score }, `Starker Lauf. Du hast ${state.score} Punkte erreicht.`)
+          : t("snake.finish.normal", { score: state.score }, `Dein Lauf endet bei ${state.score} Punkten. Versuch es direkt noch einmal.`),
+        meta: getOverlayRecordText(),
+        actionLabel: t("snake.overlay.replay", {}, "Nochmal spielen"),
+      });
+    }
+    draw(state.phase === "gameover");
   }
 
   function stopGame() {
@@ -687,6 +758,7 @@ function initSnakePage() {
     state.pendingDirection = null;
     state.score = 0;
     state.tickDelay = state.startDelay;
+    state.lastRunWasHighScore = false;
     scoreEl.textContent = "0";
     syncStoredRecords();
     placeFood();
@@ -701,7 +773,7 @@ function initSnakePage() {
       state.direction = initialDirection;
     }
     state.phase = "running";
-    statusEl.textContent = "Laeuft";
+    setSnakeStatus("snake.status.running", "Laeuft");
     renderOverlay({ visible: false });
     draw(false);
     startGameLoop();
@@ -712,13 +784,13 @@ function initSnakePage() {
   function openIntroScreen() {
     prepareRound();
     state.phase = "intro";
-    statusEl.textContent = "Bereit";
+    setSnakeStatus("snake.status.ready", "Bereit");
     renderOverlay({
       visible: true,
-      title: "Bereit fuer den Start",
-      text: "Starte eine Runde und jage einen moeglichst langen neon-gruenen Lauf.",
+      title: t("snake.overlay.title", {}, "Bereit fuer den Start"),
+      text: t("snake.overlay.text", {}, "Starte eine Runde und jage einen moeglichst langen neon-gruenen Lauf."),
       meta: getOverlayRecordText(),
-      actionLabel: "Spiel starten",
+      actionLabel: t("snake.overlay.start", {}, "Spiel starten"),
     });
   }
 
@@ -726,17 +798,18 @@ function initSnakePage() {
     const hasNewHighScore = storeSnakeHighScore(state.score);
     recordSnakeFinish(state.score);
     state.phase = "gameover";
-    statusEl.textContent = hasNewHighScore ? "Neuer Highscore" : "Game Over";
+    state.lastRunWasHighScore = hasNewHighScore;
+    setSnakeStatus(hasNewHighScore ? "snake.status.highscore" : "snake.status.gameOver", hasNewHighScore ? "Neuer Highscore" : "Game Over");
     stopGame();
     draw(true);
     renderOverlay({
       visible: true,
-      title: hasNewHighScore ? "Neuer Highscore" : "Game Over",
+      title: hasNewHighScore ? t("snake.status.highscore", {}, "Neuer Highscore") : t("snake.status.gameOver", {}, "Game Over"),
       text: hasNewHighScore
-        ? `Starker Lauf. Du hast ${state.score} Punkte erreicht.`
-        : `Dein Lauf endet bei ${state.score} Punkten. Versuch es direkt noch einmal.`,
+        ? t("snake.finish.highscore", { score: state.score }, `Starker Lauf. Du hast ${state.score} Punkte erreicht.`)
+        : t("snake.finish.normal", { score: state.score }, `Dein Lauf endet bei ${state.score} Punkten. Versuch es direkt noch einmal.`),
       meta: getOverlayRecordText(),
-      actionLabel: "Nochmal spielen",
+      actionLabel: t("snake.overlay.replay", {}, "Nochmal spielen"),
     });
     arcadeAudio.snakeCrash();
   }
@@ -796,7 +869,7 @@ function initSnakePage() {
       state.score += 10;
       scoreEl.textContent = String(state.score);
       const hasNewHighScore = storeSnakeHighScore(state.score);
-      statusEl.textContent = hasNewHighScore ? "Neuer Highscore!" : "Punkt!";
+      setSnakeStatus(hasNewHighScore ? "snake.status.highscoreBang" : "snake.status.point", hasNewHighScore ? "Neuer Highscore!" : "Punkt!");
       placeFood();
       arcadeAudio.snakeEat();
 
@@ -807,7 +880,7 @@ function initSnakePage() {
       }
     } else {
       state.body.pop();
-      statusEl.textContent = "Laeuft";
+      setSnakeStatus("snake.status.running", "Laeuft");
     }
 
     draw(false);
@@ -845,6 +918,7 @@ function initSnakePage() {
     arcadeAudio.unlock();
   });
 
+  registerArcadeUiRefresh(refreshSnakeLanguage);
   openIntroScreen();
 }
 
@@ -931,7 +1005,7 @@ function initPongPage() {
     paddleHeight: 92,
     ballRadius: 10,
     socket: null,
-    connection: "Nicht verbunden",
+    connection: t("pong.connection.disconnected", {}, "Nicht verbunden"),
     roomCode: "",
     role: null,
     players: {
@@ -951,7 +1025,7 @@ function initPongPage() {
     },
     running: false,
     winner: null,
-    statusText: "Server starten und verbinden",
+    statusText: t("pong.help.offline", {}, "Server starten und verbinden"),
     localPaddleY: (canvas.height - 92) / 2,
     lastSentY: null,
     lastSentAt: 0,
@@ -974,10 +1048,10 @@ function initPongPage() {
 
   function getRoleLabel(role) {
     if (role === "left") {
-      return "Links";
+      return t("pong.side.left", {}, "Links");
     }
     if (role === "right") {
-      return "Rechts";
+      return t("pong.side.right", {}, "Rechts");
     }
     return "-";
   }
@@ -991,15 +1065,15 @@ function initPongPage() {
   }
 
   function getSelfName() {
-    return state.selfName || "Gast";
+    return state.selfName || t("common.guest", {}, "Gast");
   }
 
   function getSideName(side) {
     if (side === "left") {
-      return state.players.leftName || "Links";
+      return state.players.leftName || t("pong.side.left", {}, "Links");
     }
     if (side === "right") {
-      return state.players.rightName || "Rechts";
+      return state.players.rightName || t("pong.side.right", {}, "Rechts");
     }
     return "";
   }
@@ -1016,84 +1090,84 @@ function initPongPage() {
 
   function getPhaseText() {
     if (!isConnected()) {
-      return "Offline";
+      return t("pong.phase.offline", {}, "Offline");
     }
     if (!state.roomCode) {
-      return "Lobby";
+      return t("pong.phase.lobby", {}, "Lobby");
     }
     if (!state.players.leftConnected || !state.players.rightConnected) {
-      return "Warten";
+      return t("pong.phase.waiting", {}, "Warten");
     }
     if (state.running) {
-      return "Live";
+      return t("pong.phase.live", {}, "Live");
     }
     if (state.winner) {
-      return "Match Ende";
+      return t("pong.phase.matchEnd", {}, "Match Ende");
     }
-    return "Bereit";
+    return t("pong.phase.ready", {}, "Bereit");
   }
 
   function getHelpText() {
     if (!isConnected()) {
-      return "Server starten und dann verbinden.";
+      return t("pong.help.offline", {}, "Server starten und dann verbinden.");
     }
     if (!state.roomCode) {
       return state.pendingAutoJoinRoomCode
-        ? `Einladung fuer Raum ${state.pendingAutoJoinRoomCode} erkannt. Verbindung wird vorbereitet.`
-        : "Namen setzen und dann einen Raum erstellen oder einem beitreten.";
+        ? t("pong.help.invite", { roomCode: state.pendingAutoJoinRoomCode }, `Einladung fuer Raum ${state.pendingAutoJoinRoomCode} erkannt. Verbindung wird vorbereitet.`)
+        : t("pong.help.lobby", {}, "Namen setzen und dann einen Raum erstellen oder einem beitreten.");
     }
     if (!state.players.leftConnected || !state.players.rightConnected) {
-      return `Raum ${state.roomCode} wartet auf Spieler 2. Teile den Code oder den Einladungslink.`;
+      return t("pong.help.waiting", { roomCode: state.roomCode }, `Raum ${state.roomCode} wartet auf Spieler 2. Teile den Code oder den Einladungslink.`);
     }
     if (state.winner) {
-      return "Match beendet. Ihr koennt im selben Raum direkt ein Rematch starten.";
+      return t("pong.help.rematch", {}, "Match beendet. Ihr koennt im selben Raum direkt ein Rematch starten.");
     }
     if (!state.running) {
-      return state.statusText || "Die Arena ist bereit.";
+      return state.statusText || t("pong.help.ready", {}, "Die Arena ist bereit.");
     }
-    return "W oder Pfeil hoch nach oben, S oder Pfeil runter nach unten. Maus im Spielfeld funktioniert ebenfalls.";
+    return t("pong.help.running", {}, "W oder Pfeil hoch nach oben, S oder Pfeil runter nach unten. Maus im Spielfeld funktioniert ebenfalls.");
   }
 
   function getYouStateText() {
     if (!state.roomCode) {
-      return isConnected() ? "Bereit fuer einen Raum" : "Noch nicht verbunden";
+      return isConnected() ? t("pong.you.readyRoom", {}, "Bereit fuer einen Raum") : t("pong.you.notConnected", {}, "Noch nicht verbunden");
     }
     if (!state.role) {
-      return "Mit dem Server verbunden";
+      return t("pong.you.serverConnected", {}, "Mit dem Server verbunden");
     }
     if (!state.players.leftConnected || !state.players.rightConnected) {
-      return state.role === "left" ? "Du haeltst die linke Seite frei." : "Du haeltst die rechte Seite frei.";
+      return state.role === "left" ? t("pong.you.holdLeft", {}, "Du haeltst die linke Seite frei.") : t("pong.you.holdRight", {}, "Du haeltst die rechte Seite frei.");
     }
     if (state.winner) {
-      return state.winner === state.role ? "Du hast das Match gewonnen." : "Das Match ist vorbei.";
+      return state.winner === state.role ? t("pong.you.won", {}, "Du hast das Match gewonnen.") : t("pong.you.finished", {}, "Das Match ist vorbei.");
     }
-    return state.role === "left" ? "Du spielst auf der linken Seite." : "Du spielst auf der rechten Seite.";
+    return state.role === "left" ? t("pong.you.playLeft", {}, "Du spielst auf der linken Seite.") : t("pong.you.playRight", {}, "Du spielst auf der rechten Seite.");
   }
 
   function getOpponentDisplayName() {
     const opponentSide = getOpponentSide();
     if (!opponentSide) {
-      return state.players.rightName || state.players.leftName || "Wartet";
+      return state.players.rightName || state.players.leftName || t("pong.side.waiting", {}, "Wartet");
     }
     return getSideName(opponentSide);
   }
 
   function getOpponentStateText() {
     if (!state.roomCode) {
-      return "Sobald jemand beitritt, startet das Match.";
+      return t("pong.opponent.starts", {}, "Sobald jemand beitritt, startet das Match.");
     }
     const opponentSide = getOpponentSide();
     if (!opponentSide) {
-      return getPlayerCount() > 0 ? "Die Spielplaetze fuellen sich gerade." : "Noch niemand im Raum.";
+      return getPlayerCount() > 0 ? t("pong.opponent.filling", {}, "Die Spielplaetze fuellen sich gerade.") : t("pong.opponent.none", {}, "Noch niemand im Raum.");
     }
     const opponentConnected = opponentSide === "left" ? state.players.leftConnected : state.players.rightConnected;
     if (!opponentConnected) {
-      return "Warte auf den zweiten Spieler.";
+      return t("pong.opponent.wait", {}, "Warte auf den zweiten Spieler.");
     }
     if (state.winner) {
-      return state.winner === opponentSide ? "Der Gegner hat dieses Match gewonnen." : "Bereit fuer die Revanche.";
+      return state.winner === opponentSide ? t("pong.opponent.won", {}, "Der Gegner hat dieses Match gewonnen.") : t("pong.opponent.rematch", {}, "Bereit fuer die Revanche.");
     }
-    return state.running ? "Der Gegner ist im Match aktiv." : "Gegner verbunden und bereit.";
+    return state.running ? t("pong.opponent.active", {}, "Der Gegner ist im Match aktiv.") : t("pong.opponent.ready", {}, "Gegner verbunden und bereit.");
   }
 
   function getPlayerNameForPayload() {
@@ -1149,9 +1223,9 @@ function initPongPage() {
       return;
     }
 
-    const winnerName = getSideName(state.winner) || (state.winner === "left" ? "Links" : "Rechts");
+    const winnerName = getSideName(state.winner) || (state.winner === "left" ? t("pong.side.left", {}, "Links") : t("pong.side.right", {}, "Rechts"));
     const youWon = state.role ? state.role === state.winner : false;
-    elements.matchTitle.textContent = youWon ? "Du hast gewonnen" : `${winnerName} gewinnt dieses Match`;
+    elements.matchTitle.textContent = youWon ? t("pong.overlay.winTitle", {}, "Du hast gewonnen") : t("pong.overlay.loseTitle", { winnerName }, `${winnerName} gewinnt dieses Match`);
     elements.matchText.textContent = youWon
       ? "Starke Runde. Der Raum bleibt offen, also koennt ihr direkt die Revanche starten."
       : `${winnerName} hat diese Runde geholt. Wenn beide verbunden bleiben, startet die Revanche sofort im selben Raum.`;
@@ -1193,8 +1267,8 @@ function initPongPage() {
     elements.opponentName.textContent = opponentName;
     elements.opponentState.textContent = getOpponentStateText();
     elements.shareNote.textContent = state.roomCode
-      ? `Sende Raum ${state.roomCode} per Code oder per Einladungslink weiter.`
-      : "Einladungslinks tragen den Raumcode direkt in die Seite ein.";
+      ? t("pong.share.room", { roomCode: state.roomCode }, `Sende Raum ${state.roomCode} per Code oder per Einladungslink weiter.`)
+      : t("pong.share.default", {}, "Einladungslinks tragen den Raumcode direkt in die Seite ein.");
 
     const connected = isConnected();
     const connecting = state.connecting;
@@ -1213,17 +1287,17 @@ function initPongPage() {
     elements.copyCode.disabled = !hasRoom;
     elements.copyLink.disabled = !hasRoom;
     elements.reset.disabled = !connected || connecting || !hasRoom || !bothPlayers;
-    elements.reset.textContent = rematchReady ? "Rematch starten" : "Neue Runde";
+    elements.reset.textContent = rematchReady ? t("pong.button.rematch", {}, "Rematch starten") : t("pong.button.newRound", {}, "Neue Runde");
 
     if (elements.rematchNote) {
       if (!hasRoom) {
-        elements.rematchNote.textContent = "Nach dem Match koennt ihr im selben Raum direkt ein Rematch starten, ohne Raumcode oder Verbindung neu aufzusetzen.";
+        elements.rematchNote.textContent = t("pong.rematch.noRoom", {}, "Nach dem Match koennt ihr im selben Raum direkt ein Rematch starten, ohne Raumcode oder Verbindung neu aufzusetzen.");
       } else if (!bothPlayers) {
-        elements.rematchNote.textContent = "Sobald zwei Spieler im Raum sind, bleibt die Verbindung fuer spaetere Revanchen bestehen.";
+        elements.rematchNote.textContent = t("pong.rematch.waiting", {}, "Sobald zwei Spieler im Raum sind, bleibt die Verbindung fuer spaetere Revanchen bestehen.");
       } else if (rematchReady) {
-        elements.rematchNote.textContent = "Beide Spieler sind noch verbunden. Ein Klick startet sofort die Revanche im selben Raum.";
+        elements.rematchNote.textContent = t("pong.rematch.ready", {}, "Beide Spieler sind noch verbunden. Ein Klick startet sofort die Revanche im selben Raum.");
       } else {
-        elements.rematchNote.textContent = "Der Raum bleibt aktiv. Fuer eine Revanche muesst ihr weder den Code neu eingeben noch die Verbindung trennen.";
+        elements.rematchNote.textContent = t("pong.rematch.active", {}, "Der Raum bleibt aktiv. Fuer eine Revanche muesst ihr weder den Code neu eingeben noch die Verbindung trennen.");
       }
     }
 
@@ -1266,7 +1340,7 @@ function initPongPage() {
     };
     state.running = Boolean(message.running);
     state.winner = message.winner || null;
-    state.statusText = message.status || state.statusText;
+    state.statusText = mapArcadeServerMessage(message.status || state.statusText);
 
     const normalizedSelfName = normalizePlayerName(message.selfName || "");
     if (normalizedSelfName) {
@@ -1307,14 +1381,14 @@ function initPongPage() {
 
   function joinRoomWithCode(roomCode, fromInvite) {
     if (!isConnected()) {
-      state.statusText = "Bitte zuerst verbinden";
+      state.statusText = t("pong.local.connectFirst", {}, "Bitte zuerst verbinden");
       updateInterface();
       return;
     }
 
     const normalizedCode = normalizeRoomCode(roomCode);
     if (normalizedCode.length < 4) {
-      state.statusText = "Bitte einen gueltigen Raumcode eingeben";
+      state.statusText = t("pong.local.validRoomCode", {}, "Bitte einen gueltigen Raumcode eingeben");
       updateInterface();
       return;
     }
@@ -1339,7 +1413,7 @@ function initPongPage() {
     try {
       message = JSON.parse(rawMessage.data);
     } catch (error) {
-      state.statusText = "Server-Antwort konnte nicht gelesen werden";
+      state.statusText = t("pong.local.badResponse", {}, "Server-Antwort konnte nicht gelesen werden");
       updateInterface();
       return;
     }
@@ -1351,8 +1425,8 @@ function initPongPage() {
         persistName(normalizedName);
         syncNameInput();
       }
-      state.connection = "Verbunden";
-      state.statusText = message.message || "Verbunden. Raum erstellen oder beitreten.";
+      state.connection = t("pong.connection.connected", {}, "Verbunden");
+      state.statusText = mapArcadeServerMessage(message.message || t("pong.local.connectedStatus", {}, "Verbunden. Raum erstellen oder beitreten."));
       updateInterface();
 
       if (state.pendingAutoJoinRoomCode && !state.roomCode) {
@@ -1369,13 +1443,13 @@ function initPongPage() {
     }
 
     if (message.type === "info") {
-      state.statusText = message.message || state.statusText;
+      state.statusText = mapArcadeServerMessage(message.message || state.statusText);
       updateInterface();
       return;
     }
 
     if (message.type === "error") {
-      state.statusText = message.message || "Serverfehler";
+      state.statusText = mapArcadeServerMessage(message.message || t("pong.local.serverError", {}, "Serverfehler"));
       updateInterface();
     }
   }
@@ -1395,7 +1469,7 @@ function initPongPage() {
 
     state.socket = null;
     state.connecting = false;
-    state.connection = "Nicht verbunden";
+    state.connection = t("pong.connection.disconnected", {}, "Nicht verbunden");
     resetRoomView();
     if (manualStatus) {
       state.statusText = manualStatus;
@@ -1421,24 +1495,24 @@ function initPongPage() {
       socket = new WebSocket(url);
       state.socket = socket;
     } catch (error) {
-      state.connection = "Fehler";
+      state.connection = t("pong.connection.error", {}, "Fehler");
       state.connecting = false;
-      state.statusText = "WebSocket-URL ist ungueltig";
+      state.statusText = t("pong.local.socketInvalid", {}, "WebSocket-URL ist ungueltig");
       updateInterface();
       return;
     }
 
     state.connecting = true;
     state.disconnectReason = "";
-    state.connection = "Verbinde...";
-    state.statusText = "Verbindung wird aufgebaut";
+    state.connection = t("pong.connection.connecting", {}, "Verbinde...");
+    state.statusText = t("pong.local.connectionStarting", {}, "Verbindung wird aufgebaut");
     updateInterface();
 
     socket.addEventListener("open", () => {
       state.socket = socket;
       state.connecting = false;
-      state.connection = "Verbunden";
-      state.statusText = "Verbunden. Erstelle einen Raum oder tritt einem bei.";
+      state.connection = t("pong.connection.connected", {}, "Verbunden");
+      state.statusText = mapArcadeServerMessage("Verbunden. Erstelle einen Raum oder tritt einem bei.");
       updateInterface();
     });
 
@@ -1449,17 +1523,17 @@ function initPongPage() {
         state.socket = null;
       }
       state.connecting = false;
-      state.connection = "Nicht verbunden";
+      state.connection = t("pong.connection.disconnected", {}, "Nicht verbunden");
       resetRoomView();
-      state.statusText = state.disconnectReason || "Verbindung beendet";
+      state.statusText = state.disconnectReason || t("pong.local.connectionClosed", {}, "Verbindung beendet");
       state.disconnectReason = "";
       updateInterface();
     });
 
     socket.addEventListener("error", () => {
       state.connecting = false;
-      state.connection = "Fehler";
-      state.statusText = "Server nicht erreichbar";
+      state.connection = t("pong.connection.error", {}, "Fehler");
+      state.statusText = t("pong.local.serverUnavailable", {}, "Server nicht erreichbar");
       updateInterface();
     });
   }
@@ -1471,13 +1545,13 @@ function initPongPage() {
 
     sendMessage({ type: "leave_room" });
     resetRoomView();
-    state.statusText = "Raum verlassen";
+    state.statusText = t("pong.local.roomLeft", {}, "Raum verlassen");
     updateInterface();
   }
 
   function createRoom() {
     if (!isConnected()) {
-      state.statusText = "Bitte zuerst verbinden";
+      state.statusText = t("pong.local.connectFirst", {}, "Bitte zuerst verbinden");
       updateInterface();
       return;
     }
@@ -1489,7 +1563,7 @@ function initPongPage() {
     }
 
     sendMessage(payload);
-    state.statusText = "Raum wird erstellt";
+    state.statusText = t("pong.local.roomCreating", {}, "Raum wird erstellt");
     updateInterface();
   }
 
@@ -1517,7 +1591,7 @@ function initPongPage() {
 
   function copyText(text, successMessage) {
     if (!navigator.clipboard || !navigator.clipboard.writeText) {
-      state.statusText = "Kopieren nicht moeglich";
+      state.statusText = t("pong.local.copyFailed", {}, "Kopieren nicht moeglich");
       updateInterface();
       return;
     }
@@ -1526,7 +1600,7 @@ function initPongPage() {
       state.statusText = successMessage;
       updateInterface();
     }).catch(() => {
-      state.statusText = "Kopieren nicht moeglich";
+      state.statusText = t("pong.local.copyFailed", {}, "Kopieren nicht moeglich");
       updateInterface();
     });
   }
@@ -1536,7 +1610,7 @@ function initPongPage() {
       return;
     }
 
-    copyText(state.roomCode, `Raumcode ${state.roomCode} kopiert`);
+    copyText(state.roomCode, t("pong.local.roomCodeCopied", { roomCode: state.roomCode }, `Raumcode ${state.roomCode} kopiert`));
   }
 
   function copyShareLink() {
@@ -1544,13 +1618,13 @@ function initPongPage() {
       return;
     }
 
-    copyText(buildShareUrl(), `Einladungslink fuer ${state.roomCode} kopiert`);
+    copyText(buildShareUrl(), t("pong.local.inviteCopied", { roomCode: state.roomCode }, `Einladungslink fuer ${state.roomCode} kopiert`));
   }
 
   function saveName(announce) {
     const normalized = normalizePlayerName(elements.playerName.value);
     if (!normalized) {
-      state.statusText = "Bitte einen Namen eingeben";
+      state.statusText = t("pong.local.enterName", {}, "Bitte einen Namen eingeben");
       updateInterface();
       return;
     }
@@ -1564,7 +1638,7 @@ function initPongPage() {
     }
 
     if (announce) {
-      state.statusText = `Name gespeichert: ${normalized}`;
+      state.statusText = t("pong.local.nameSaved", { name: normalized }, `Name gespeichert: ${normalized}`);
       updateInterface();
     }
   }
@@ -1572,7 +1646,7 @@ function initPongPage() {
   function requestRematch() {
     if (isConnected() && state.roomCode) {
       sendMessage({ type: "reset_match" });
-      state.statusText = state.winner ? "Rematch angefragt" : "Neue Runde angefragt";
+      state.statusText = state.winner ? t("pong.local.rematchRequested", {}, "Rematch angefragt") : t("pong.local.resetRequested", {}, "Neue Runde angefragt");
       arcadeAudio.uiConfirm();
       updateInterface();
       canvas.focus();
@@ -1641,26 +1715,26 @@ function initPongPage() {
     context.shadowBlur = 0;
 
     if (!isConnected()) {
-      drawOverlay("Offline", "Server starten und dann verbinden");
+      drawOverlay(t("pong.canvas.offlineTitle", {}, "Offline"), t("pong.canvas.offlineText", {}, "Server starten und dann verbinden"));
       return;
     }
 
     if (!state.roomCode) {
-      drawOverlay("Lobby", state.pendingAutoJoinRoomCode ? `Einladung ${state.pendingAutoJoinRoomCode} wird vorbereitet` : "Raum erstellen oder Code eingeben");
+      drawOverlay(t("pong.canvas.lobbyTitle", {}, "Lobby"), state.pendingAutoJoinRoomCode ? t("pong.canvas.lobbyInvite", { roomCode: state.pendingAutoJoinRoomCode }, `Einladung ${state.pendingAutoJoinRoomCode} wird vorbereitet`) : t("pong.canvas.lobbyText", {}, "Raum erstellen oder Code eingeben"));
       return;
     }
 
     if (!state.players.leftConnected || !state.players.rightConnected) {
-      drawOverlay("Wartebereich", `Raum ${state.roomCode} wartet auf Spieler 2`);
+      drawOverlay(t("pong.canvas.waitingTitle", {}, "Wartebereich"), t("pong.canvas.waitingText", { roomCode: state.roomCode }, `Raum ${state.roomCode} wartet auf Spieler 2`));
       return;
     }
 
     if (!state.running) {
       if (state.winner) {
         const youWon = state.role ? state.role === state.winner : false;
-        drawOverlay(youWon ? "Victory" : "Game Over", state.statusText || "Neue Runde starten");
+        drawOverlay(youWon ? t("pong.canvas.victory", {}, "Victory") : t("pong.canvas.gameOver", {}, "Game Over"), state.statusText || t("pong.button.newRound", {}, "Neue Runde starten"));
       } else {
-        drawOverlay("Bereit", state.statusText || "Warte auf die Runde");
+        drawOverlay(t("pong.canvas.readyTitle", {}, "Bereit"), state.statusText || t("pong.canvas.readyText", {}, "Warte auf die Runde"));
       }
     }
   }
@@ -1735,7 +1809,7 @@ function initPongPage() {
     }
   });
   elements.connect.addEventListener("click", connect);
-  elements.disconnect.addEventListener("click", () => closeSocket("Verbindung getrennt"));
+  elements.disconnect.addEventListener("click", () => closeSocket(t("pong.local.connectionClosed", {}, "Verbindung getrennt")));
   elements.saveName.addEventListener("click", () => saveName(true));
   elements.copyLink.addEventListener("click", copyShareLink);
   elements.createRoom.addEventListener("click", createRoom);
@@ -1765,8 +1839,18 @@ function initPongPage() {
   });
 
   if (state.pendingAutoJoinRoomCode) {
-    state.statusText = `Einladungslink fuer Raum ${state.pendingAutoJoinRoomCode} erkannt`;
+    state.statusText = t("pong.local.inviteDetected", { roomCode: state.pendingAutoJoinRoomCode }, `Einladungslink fuer Raum ${state.pendingAutoJoinRoomCode} erkannt`);
   }
+
+  registerArcadeUiRefresh(() => {
+    if (state.connecting) {
+      state.connection = t("pong.connection.connecting", {}, "Verbinde...");
+    } else if (isConnected()) {
+      state.connection = t("pong.connection.connected", {}, "Verbunden");
+    }
+    updateInterface();
+    draw();
+  });
 
   updateInterface();
   draw();
@@ -1803,11 +1887,24 @@ function initMemoryPage() {
     busy: false,
     timeoutId: null,
     phase: "intro",
+    lastStatusKey: "memory.status.ready",
+    lastStatusFallback: "Bereit",
+    lastStatusVars: {},
+    lastRunWasBest: false,
   };
+
+  function setMemoryStatus(key, fallback, variables) {
+    state.lastStatusKey = key;
+    state.lastStatusFallback = fallback;
+    state.lastStatusVars = variables || {};
+    statusEl.textContent = t(key, state.lastStatusVars, fallback);
+  }
 
   function getOverlayRecordText() {
     const bestMoves = getMemoryBestMoves();
-    return bestMoves === null ? "Bestwert: --" : `Bestwert: ${bestMoves} Zuege`;
+    return bestMoves === null
+      ? t("memory.best.unknown", {}, "Bestwert: --")
+      : t("memory.best.value", { value: bestMoves }, `Bestwert: ${bestMoves} Zuege`);
   }
 
   function renderOverlay(options) {
@@ -1824,7 +1921,34 @@ function initMemoryPage() {
     elements.overlayTitle.textContent = options.title;
     elements.overlayText.textContent = options.text;
     elements.overlayMeta.textContent = options.meta || getOverlayRecordText();
-    elements.overlayAction.textContent = options.actionLabel || "Runde starten";
+    elements.overlayAction.textContent = options.actionLabel || t("memory.overlay.start", {}, "Runde starten");
+  }
+
+  function refreshMemoryLanguage() {
+    setMemoryStatus(state.lastStatusKey, state.lastStatusFallback, state.lastStatusVars);
+    grid.querySelectorAll(".memory-card").forEach((card) => {
+      card.setAttribute("aria-label", t("memory.card.hidden", {}, "Verdeckte Karte"));
+    });
+    if (state.phase === "intro") {
+      renderOverlay({
+        visible: true,
+        title: t("memory.overlay.title", {}, "Bereit fuer den Run"),
+        text: t("memory.overlay.text", {}, "Starte eine Runde und finde alle acht Paare in moeglichst wenigen Zuegen."),
+        meta: getOverlayRecordText(),
+        actionLabel: t("memory.overlay.start", {}, "Runde starten"),
+      });
+    }
+    if (state.phase === "won") {
+      renderOverlay({
+        visible: true,
+        title: state.lastRunWasBest ? t("memory.status.newBest", {}, "Neuer Bestwert") : t("memory.status.done", {}, "Geschafft"),
+        text: state.lastRunWasBest
+          ? t("memory.finish.newBest", { moves: state.moves }, `Starker Run. Du hast alle Paare in ${state.moves} Zuegen geloest.`)
+          : t("memory.finish.normal", { moves: state.moves }, `Runde beendet. Du hast ${state.moves} Zuege gebraucht.`),
+        meta: getOverlayRecordText(),
+        actionLabel: t("memory.overlay.replay", {}, "Nochmal spielen"),
+      });
+    }
   }
 
   function shuffle(items) {
@@ -1842,7 +1966,7 @@ function initMemoryPage() {
     button.className = "memory-card";
     button.dataset.symbol = symbol;
     button.dataset.index = String(index);
-    button.setAttribute("aria-label", "Verdeckte Karte");
+    button.setAttribute("aria-label", t("memory.card.hidden", {}, "Verdeckte Karte"));
     button.innerHTML = `
       <span class="memory-card-inner">
         <span class="memory-card-face memory-card-front">?</span>
@@ -1871,6 +1995,7 @@ function initMemoryPage() {
     state.moves = 0;
     state.matches = 0;
     state.busy = false;
+    state.lastRunWasBest = false;
     movesEl.textContent = "0";
     matchesEl.textContent = "0";
     syncStoredRecords();
@@ -1880,13 +2005,13 @@ function initMemoryPage() {
   function openIntroScreen() {
     prepareBoard();
     state.phase = "intro";
-    statusEl.textContent = "Bereit";
+    setMemoryStatus("memory.status.ready", "Bereit");
     renderOverlay({
       visible: true,
-      title: "Bereit fuer den Run",
-      text: "Starte eine Runde und finde alle acht Paare in moeglichst wenigen Zuegen.",
+      title: t("memory.overlay.title", {}, "Bereit fuer den Run"),
+      text: t("memory.overlay.text", {}, "Starte eine Runde und finde alle acht Paare in moeglichst wenigen Zuegen."),
       meta: getOverlayRecordText(),
-      actionLabel: "Runde starten",
+      actionLabel: t("memory.overlay.start", {}, "Runde starten"),
     });
   }
 
@@ -1895,7 +2020,7 @@ function initMemoryPage() {
     prepareBoard();
     recordArcadeStart("memory");
     state.phase = "running";
-    statusEl.textContent = "Laeuft";
+    setMemoryStatus("memory.status.running", "Laeuft");
     renderOverlay({ visible: false });
     arcadeAudio.startRound();
   }
@@ -1904,15 +2029,16 @@ function initMemoryPage() {
     const hasNewBest = storeMemoryBestMoves(state.moves);
     recordMemoryWin(state.moves);
     state.phase = "won";
-    statusEl.textContent = hasNewBest ? "Neuer Bestwert" : "Geschafft";
+    state.lastRunWasBest = hasNewBest;
+    setMemoryStatus(hasNewBest ? "memory.status.newBest" : "memory.status.done", hasNewBest ? "Neuer Bestwert" : "Geschafft");
     renderOverlay({
       visible: true,
-      title: hasNewBest ? "Neuer Bestwert" : "Geschafft",
+      title: hasNewBest ? t("memory.status.newBest", {}, "Neuer Bestwert") : t("memory.status.done", {}, "Geschafft"),
       text: hasNewBest
-        ? `Starker Run. Du hast alle Paare in ${state.moves} Zuegen geloest.`
-        : `Runde beendet. Du hast ${state.moves} Zuege gebraucht.`,
+        ? t("memory.finish.newBest", { moves: state.moves }, `Starker Run. Du hast alle Paare in ${state.moves} Zuegen geloest.`)
+        : t("memory.finish.normal", { moves: state.moves }, `Runde beendet. Du hast ${state.moves} Zuege gebraucht.`),
       meta: getOverlayRecordText(),
-      actionLabel: "Nochmal spielen",
+      actionLabel: t("memory.overlay.replay", {}, "Nochmal spielen"),
     });
     arcadeAudio.memoryWin();
   }
@@ -1931,7 +2057,7 @@ function initMemoryPage() {
     arcadeAudio.memoryFlip();
 
     if (state.flipped.length < 2) {
-      statusEl.textContent = "Noch eine Karte";
+      setMemoryStatus("memory.status.oneMore", "Noch eine Karte");
       return;
     }
 
@@ -1950,13 +2076,13 @@ function initMemoryPage() {
       if (state.matches === symbols.length) {
         finishRun();
       } else {
-        statusEl.textContent = "Treffer";
+        setMemoryStatus("memory.status.hit", "Treffer");
       }
       return;
     }
 
     state.busy = true;
-    statusEl.textContent = "Kein Paar";
+    setMemoryStatus("memory.status.miss", "Kein Paar");
     arcadeAudio.memoryMiss();
     state.timeoutId = window.setTimeout(() => {
       first.classList.remove("is-flipped");
@@ -1964,7 +2090,7 @@ function initMemoryPage() {
       state.flipped = [];
       state.busy = false;
       state.timeoutId = null;
-      statusEl.textContent = "Weiter";
+      setMemoryStatus("memory.status.continue", "Weiter");
     }, 700);
   }
 
@@ -1972,12 +2098,36 @@ function initMemoryPage() {
   elements.overlayAction.addEventListener("click", startRun);
   grid.addEventListener("pointerdown", () => arcadeAudio.unlock(), { passive: true });
 
+  registerArcadeUiRefresh(refreshMemoryLanguage);
   openIntroScreen();
 }
 
 initSnakePage();
 initPongPage();
 initMemoryPage();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
