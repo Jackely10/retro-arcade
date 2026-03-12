@@ -714,6 +714,48 @@ function getArcadeStatDisplayValue(statKey, stats) {
   }
 }
 
+const arcadeInteractiveAudioSelector = [
+  ".button",
+  ".nav-links a",
+  ".pill",
+  ".lang-chip",
+  ".btn-text",
+  "[data-nav-toggle]",
+].join(", ");
+
+function getArcadeSoundButtonIconMarkup(enabled) {
+  return enabled
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6.8 8.5H3.5v7h3.3L11 19z"></path><path d="M15 9.2a4.5 4.5 0 0 1 0 5.6"></path><path d="M17.9 6.8a8.1 8.1 0 0 1 0 10.4"></path></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6.8 8.5H3.5v7h3.3L11 19z"></path><path d="m16 8 4 8"></path><path d="m20 8-4 8"></path></svg>';
+}
+
+function getArcadeSoundButtonMarkup(enabled, label) {
+  return `<span class="sound-toggle-icon" aria-hidden="true">${getArcadeSoundButtonIconMarkup(enabled)}</span><span class="sound-toggle-label">${label}</span>`;
+}
+
+function isArcadeAudioTargetDisabled(element) {
+  return ("disabled" in element && Boolean(element.disabled)) || element.getAttribute("aria-disabled") === "true";
+}
+
+function bindArcadeInteractiveAudio(root = document) {
+  root.querySelectorAll(arcadeInteractiveAudioSelector).forEach((element) => {
+    if (element.dataset.arcadeAudioBound === "true") {
+      return;
+    }
+    element.dataset.arcadeAudioBound = "true";
+    element.addEventListener("pointerenter", () => {
+      if (!isArcadeAudioTargetDisabled(element)) {
+        arcadeAudio.uiHover();
+      }
+    });
+    element.addEventListener("click", () => {
+      if (!isArcadeAudioTargetDisabled(element)) {
+        arcadeAudio.uiConfirm();
+      }
+    });
+  });
+}
+
 function syncStoredRecords() {
   const snakeHighScore = getSnakeHighScore();
   document.querySelectorAll('[data-arcade-record="snake-score"]').forEach((node) => {
@@ -741,8 +783,10 @@ function syncStoredRecords() {
   const soundButtonText = soundEnabled ? t("common.soundButton.on", {}, "Sound: AN") : t("common.soundButton.off", {}, "Sound: AUS");
   const soundLabelText = soundEnabled ? t("common.soundLabel.on", {}, "AN") : t("common.soundLabel.off", {}, "AUS");
   document.querySelectorAll('[data-arcade-sound-toggle]').forEach((button) => {
-    button.textContent = soundButtonText;
-    button.setAttribute('aria-pressed', soundEnabled ? 'true' : 'false');
+    button.innerHTML = getArcadeSoundButtonMarkup(soundEnabled, soundButtonText);
+    button.setAttribute("aria-pressed", soundEnabled ? "true" : "false");
+    button.setAttribute("aria-label", soundButtonText);
+    button.setAttribute("data-sound-state", soundEnabled ? "on" : "off");
   });
   document.querySelectorAll('[data-arcade-sound-label]').forEach((node) => {
     node.textContent = soundLabelText;
@@ -753,6 +797,7 @@ function syncStoredRecords() {
     node.textContent = getArcadeStatDisplayValue(node.getAttribute('data-arcade-stat'), stats);
   });
 
+  bindArcadeInteractiveAudio();
   syncArcadeDashboard(stats, profileName, snakeHighScore, memoryBestMoves);
 }
 
@@ -789,7 +834,6 @@ function initGlobalArcadeUi() {
       const normalizedName = setArcadeProfileName(input.value);
       input.value = normalizedName;
       arcadeAudio.unlock();
-      arcadeAudio.uiConfirm();
     });
   });
 
@@ -985,28 +1029,37 @@ function initGlobalArcadeUi() {
 
 syncStoredRecords();
 registerArcadeUiRefresh(syncStoredRecords);
-function createArcadeAudio() {
-  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-  let context = null;
-  let masterGain = null;
+class SoundManager {
+  constructor() {
+    if (SoundManager.instance) {
+      return SoundManager.instance;
+    }
 
-  function ensureContext() {
-    if (!AudioContextClass) {
+    this.AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    this.context = null;
+    this.masterGain = null;
+    this.lastHoverAt = 0;
+    this.hoverCooldownMs = 50;
+    SoundManager.instance = this;
+  }
+
+  ensureContext() {
+    if (!this.AudioContextClass) {
       return null;
     }
 
-    if (!context) {
-      context = new AudioContextClass();
-      masterGain = context.createGain();
-      masterGain.gain.value = 0.04;
-      masterGain.connect(context.destination);
+    if (!this.context) {
+      this.context = new this.AudioContextClass();
+      this.masterGain = this.context.createGain();
+      this.masterGain.gain.value = 0.05;
+      this.masterGain.connect(this.context.destination);
     }
 
-    return context;
+    return this.context;
   }
 
-  function unlock() {
-    const ctx = ensureContext();
+  unlock() {
+    const ctx = this.ensureContext();
     if (!ctx) {
       return;
     }
@@ -1018,9 +1071,9 @@ function createArcadeAudio() {
     }
   }
 
-  function playPattern(pattern) {
-    const ctx = ensureContext();
-    if (!ctx || ctx.state === "suspended" || !masterGain || !isArcadeSoundEnabled()) {
+  playPattern(pattern) {
+    const ctx = this.ensureContext();
+    if (!ctx || ctx.state === "suspended" || !this.masterGain || !isArcadeSoundEnabled()) {
       return;
     }
 
@@ -1028,96 +1081,156 @@ function createArcadeAudio() {
     pattern.forEach((step) => {
       const oscillator = ctx.createOscillator();
       const gainNode = ctx.createGain();
+      const filterNode = step.filterType ? ctx.createBiquadFilter() : null;
       const time = startTime + (step.time || 0);
       const duration = step.duration || 0.08;
-      const targetGain = (step.gain || 1) * masterGain.gain.value;
+      const attack = Math.min(duration * 0.35, step.attack || 0.01);
+      const release = step.release || 0.06;
+      const volume = Math.max(0.0001, (step.gain || 1) * this.masterGain.gain.value);
+      const releaseStart = Math.max(time + attack + 0.01, time + duration - release);
 
       oscillator.type = step.type || "square";
-      oscillator.frequency.setValueAtTime(step.frequency || 440, time);
+      oscillator.frequency.setValueAtTime(Math.max(1, step.frequency || 440), time);
+      if (step.endFrequency) {
+        oscillator.frequency.exponentialRampToValueAtTime(Math.max(1, step.endFrequency), time + duration);
+      }
+      if (typeof step.detune === "number") {
+        oscillator.detune.setValueAtTime(step.detune, time);
+      }
+
+      if (filterNode) {
+        filterNode.type = step.filterType;
+        filterNode.frequency.setValueAtTime(step.filterFrequency || 1400, time);
+        if (step.endFilterFrequency) {
+          filterNode.frequency.exponentialRampToValueAtTime(Math.max(40, step.endFilterFrequency), time + duration);
+        }
+        if (typeof step.filterQ === "number") {
+          filterNode.Q.setValueAtTime(step.filterQ, time);
+        }
+      }
+
       gainNode.gain.setValueAtTime(0.0001, time);
-      gainNode.gain.linearRampToValueAtTime(targetGain, time + 0.01);
+      gainNode.gain.linearRampToValueAtTime(volume, time + attack);
+      gainNode.gain.exponentialRampToValueAtTime(Math.max(volume * 0.55, 0.0002), releaseStart);
       gainNode.gain.exponentialRampToValueAtTime(0.0001, time + duration);
 
-      oscillator.connect(gainNode);
-      gainNode.connect(masterGain);
+      oscillator.connect(filterNode || gainNode);
+      if (filterNode) {
+        filterNode.connect(gainNode);
+      }
+      gainNode.connect(this.masterGain);
       oscillator.start(time);
-      oscillator.stop(time + duration + 0.03);
+      oscillator.stop(time + duration + 0.04);
     });
   }
 
-  return {
-    unlock,
-    uiConfirm() {
-      playPattern([
-        { frequency: 480, duration: 0.07, gain: 0.85 },
-        { frequency: 620, duration: 0.08, gain: 0.65, time: 0.07 },
+  uiHover() {
+    const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+    if (now - this.lastHoverAt < this.hoverCooldownMs) {
+      return;
+    }
+    this.lastHoverAt = now;
+    this.playPattern([
+      { frequency: 1260, endFrequency: 1380, duration: 0.035, gain: 0.16, type: "sine", attack: 0.004, release: 0.02 },
+    ]);
+  }
+
+  uiConfirm() {
+    this.playPattern([
+      { frequency: 180, duration: 0.09, gain: 0.48, type: "triangle", filterType: "lowpass", filterFrequency: 850, endFilterFrequency: 520, release: 0.05 },
+      { frequency: 96, duration: 0.12, gain: 0.2, time: 0.012, type: "sine", release: 0.07 },
+    ]);
+  }
+
+  modalReveal(state) {
+    this.playPattern(state === "win"
+      ? [
+        { frequency: 240, endFrequency: 420, duration: 0.18, gain: 0.28, type: "sine", filterType: "lowpass", filterFrequency: 1200, endFilterFrequency: 880, attack: 0.02, release: 0.08 },
+        { frequency: 620, endFrequency: 760, duration: 0.1, gain: 0.12, time: 0.06, type: "triangle", attack: 0.01, release: 0.05 },
+      ]
+      : [
+        { frequency: 210, endFrequency: 300, duration: 0.16, gain: 0.2, type: "sine", filterType: "lowpass", filterFrequency: 780, endFilterFrequency: 520, attack: 0.02, release: 0.08 },
       ]);
-    },
-    startRound() {
-      playPattern([
-        { frequency: 360, duration: 0.08, gain: 0.7 },
-        { frequency: 520, duration: 0.09, gain: 0.75, time: 0.08 },
+  }
+
+  highScore() {
+    this.playPattern([
+      { frequency: 392, duration: 0.09, gain: 0.52, type: "triangle", filterType: "lowpass", filterFrequency: 1800, release: 0.05 },
+      { frequency: 494, duration: 0.09, gain: 0.48, time: 0.08, type: "triangle", filterType: "lowpass", filterFrequency: 1800, release: 0.05 },
+      { frequency: 588, duration: 0.12, gain: 0.52, time: 0.16, type: "triangle", filterType: "lowpass", filterFrequency: 1800, release: 0.07 },
+    ]);
+  }
+
+  startRound() {
+    this.playPattern([
+      { frequency: 340, duration: 0.06, gain: 0.4, type: "triangle", filterType: "lowpass", filterFrequency: 980, release: 0.04 },
+      { frequency: 500, duration: 0.08, gain: 0.36, time: 0.06, type: "sine", attack: 0.01, release: 0.05 },
+    ]);
+  }
+
+  snakeEat() {
+    this.playPattern([
+      { frequency: 720, duration: 0.05, gain: 0.34, type: "square", release: 0.03 },
+      { frequency: 920, duration: 0.07, gain: 0.24, time: 0.04, type: "triangle", release: 0.04 },
+    ]);
+  }
+
+  snakeCrash() {
+    this.playPattern([
+      { frequency: 240, endFrequency: 120, duration: 0.2, gain: 0.4, type: "sawtooth", filterType: "lowpass", filterFrequency: 720, endFilterFrequency: 260, attack: 0.01, release: 0.09 },
+      { frequency: 130, endFrequency: 90, duration: 0.24, gain: 0.22, time: 0.05, type: "triangle", filterType: "lowpass", filterFrequency: 420, endFilterFrequency: 180, attack: 0.01, release: 0.12 },
+    ]);
+  }
+
+  memoryFlip() {
+    this.playPattern([
+      { frequency: 540, duration: 0.04, gain: 0.18, type: "triangle", release: 0.025 },
+    ]);
+  }
+
+  memoryMatch() {
+    this.playPattern([
+      { frequency: 520, duration: 0.05, gain: 0.28, type: "triangle", release: 0.03 },
+      { frequency: 700, duration: 0.07, gain: 0.22, time: 0.04, type: "triangle", release: 0.04 },
+    ]);
+  }
+
+  memoryMiss() {
+    this.playPattern([
+      { frequency: 250, endFrequency: 190, duration: 0.12, gain: 0.22, type: "sine", filterType: "lowpass", filterFrequency: 520, endFilterFrequency: 260, release: 0.06 },
+    ]);
+  }
+
+  memoryWin() {
+    this.playPattern([
+      { frequency: 392, duration: 0.08, gain: 0.44, type: "triangle", filterType: "lowpass", filterFrequency: 1800, release: 0.05 },
+      { frequency: 494, duration: 0.08, gain: 0.4, time: 0.08, type: "triangle", filterType: "lowpass", filterFrequency: 1800, release: 0.05 },
+      { frequency: 588, duration: 0.12, gain: 0.46, time: 0.16, type: "triangle", filterType: "lowpass", filterFrequency: 1800, release: 0.08 },
+    ]);
+  }
+
+  pongScore() {
+    this.playPattern([
+      { frequency: 310, duration: 0.05, gain: 0.28, type: "triangle", release: 0.03 },
+      { frequency: 380, duration: 0.07, gain: 0.18, time: 0.05, type: "square", release: 0.04 },
+    ]);
+  }
+
+  pongWin(isWinner) {
+    this.playPattern(isWinner
+      ? [
+        { frequency: 392, duration: 0.09, gain: 0.46, type: "triangle", filterType: "lowpass", filterFrequency: 1800, release: 0.05 },
+        { frequency: 494, duration: 0.09, gain: 0.44, time: 0.09, type: "triangle", filterType: "lowpass", filterFrequency: 1800, release: 0.05 },
+        { frequency: 588, duration: 0.14, gain: 0.48, time: 0.18, type: "triangle", filterType: "lowpass", filterFrequency: 1800, release: 0.08 },
+      ]
+      : [
+        { frequency: 280, endFrequency: 210, duration: 0.14, gain: 0.28, type: "triangle", filterType: "lowpass", filterFrequency: 620, endFilterFrequency: 260, attack: 0.01, release: 0.07 },
+        { frequency: 190, endFrequency: 140, duration: 0.18, gain: 0.2, time: 0.08, type: "sine", filterType: "lowpass", filterFrequency: 420, endFilterFrequency: 180, attack: 0.01, release: 0.09 },
       ]);
-    },
-    snakeEat() {
-      playPattern([
-        { frequency: 700, duration: 0.06, gain: 0.8 },
-        { frequency: 920, duration: 0.08, gain: 0.55, time: 0.05 },
-      ]);
-    },
-    snakeCrash() {
-      playPattern([
-        { frequency: 260, duration: 0.12, gain: 0.9, type: "sawtooth" },
-        { frequency: 160, duration: 0.18, gain: 0.6, time: 0.07, type: "triangle" },
-      ]);
-    },
-    memoryFlip() {
-      playPattern([
-        { frequency: 520, duration: 0.05, gain: 0.45 },
-      ]);
-    },
-    memoryMatch() {
-      playPattern([
-        { frequency: 540, duration: 0.05, gain: 0.65 },
-        { frequency: 720, duration: 0.08, gain: 0.5, time: 0.05 },
-      ]);
-    },
-    memoryMiss() {
-      playPattern([
-        { frequency: 260, duration: 0.06, gain: 0.5 },
-        { frequency: 210, duration: 0.08, gain: 0.35, time: 0.06 },
-      ]);
-    },
-    memoryWin() {
-      playPattern([
-        { frequency: 420, duration: 0.08, gain: 0.65 },
-        { frequency: 560, duration: 0.08, gain: 0.65, time: 0.08 },
-        { frequency: 760, duration: 0.12, gain: 0.7, time: 0.16 },
-      ]);
-    },
-    pongScore() {
-      playPattern([
-        { frequency: 330, duration: 0.06, gain: 0.75 },
-        { frequency: 410, duration: 0.09, gain: 0.55, time: 0.06 },
-      ]);
-    },
-    pongWin(isWinner) {
-      playPattern(isWinner
-        ? [
-          { frequency: 420, duration: 0.09, gain: 0.7 },
-          { frequency: 560, duration: 0.09, gain: 0.7, time: 0.08 },
-          { frequency: 760, duration: 0.14, gain: 0.8, time: 0.16 },
-        ]
-        : [
-          { frequency: 320, duration: 0.1, gain: 0.55 },
-          { frequency: 240, duration: 0.14, gain: 0.55, time: 0.09 },
-          { frequency: 180, duration: 0.18, gain: 0.45, time: 0.2 },
-        ]);
-    },
-  };
+  }
 }
 
-const arcadeAudio = createArcadeAudio();
+const arcadeAudio = new SoundManager();
 document.addEventListener("pointerdown", () => arcadeAudio.unlock(), { passive: true });
 document.addEventListener("keydown", () => arcadeAudio.unlock());
 window.addEventListener("storage", () => syncStoredRecords());
@@ -1185,6 +1298,10 @@ function createArcadeResultModal(modalId) {
     secondary: overlay.querySelector(".btn-menu"),
   };
 
+  [elements.primary, elements.secondary].forEach((button) => {
+    button.addEventListener("pointerenter", () => arcadeAudio.uiHover());
+  });
+
   let hideTimeoutId = 0;
   let activeConfig = null;
 
@@ -1214,6 +1331,7 @@ function createArcadeResultModal(modalId) {
     window.requestAnimationFrame(() => {
       overlay.classList.add("is-visible");
       if (!wasVisible) {
+        arcadeAudio.modalReveal((config && config.state) === "win" ? "win" : "lose");
         elements.primary.focus();
       }
     });
@@ -1233,12 +1351,14 @@ function createArcadeResultModal(modalId) {
     if (elements.primary.disabled) {
       return;
     }
+    arcadeAudio.uiConfirm();
     if (activeConfig && typeof activeConfig.onPrimary === "function") {
       activeConfig.onPrimary();
     }
   });
 
   elements.secondary.addEventListener("click", () => {
+    arcadeAudio.uiConfirm();
     if (activeConfig && typeof activeConfig.onSecondary === "function") {
       activeConfig.onSecondary();
       return;
@@ -1505,7 +1625,11 @@ function initSnakePage() {
     draw(true);
     renderOverlay({ visible: false });
     showSnakeResultModal();
-    arcadeAudio.snakeCrash();
+    if (hasNewHighScore) {
+      arcadeAudio.highScore();
+    } else {
+      arcadeAudio.snakeCrash();
+    }
   }
 
   function queueDirection(nextDirection) {
@@ -2363,7 +2487,6 @@ function initPongPage() {
       resultModal.hide();
       sendMessage({ type: "reset_match" });
       state.statusText = state.winner ? t("pong.local.rematchRequested", {}, "Rematch angefragt") : t("pong.local.resetRequested", {}, "Neue Runde angefragt");
-      arcadeAudio.uiConfirm();
       updateInterface();
       canvas.focus();
     }
@@ -2769,7 +2892,11 @@ function initMemoryPage() {
     setMemoryStatus(hasNewBest ? "memory.status.newBest" : "memory.status.done", hasNewBest ? "Neuer Bestwert" : "Geschafft");
     renderOverlay({ visible: false });
     showMemoryResultModal();
-    arcadeAudio.memoryWin();
+    if (hasNewBest) {
+      arcadeAudio.highScore();
+    } else {
+      arcadeAudio.memoryWin();
+    }
   }
 
   function flipCard(button) {

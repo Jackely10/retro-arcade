@@ -247,8 +247,34 @@ input {
 }
 
 .topbar-sound {
-  min-width: 9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  min-width: 10.25rem;
   white-space: nowrap;
+}
+
+.sound-toggle-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+}
+
+.sound-toggle-icon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.sound-toggle-label {
+  line-height: 1;
+}
+
+.topbar-sound[data-sound-state="off"] .sound-toggle-icon {
+  opacity: 0.62;
 }
 
 .language-switcher {
