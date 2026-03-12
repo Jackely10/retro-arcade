@@ -52,6 +52,25 @@ body {
   animation: arcade-page-enter 240ms ease-out;
 }
 
+.game-page {
+  --screen-glow: rgba(34, 197, 94, 0.2);
+  --screen-reflection: rgba(255, 255, 255, 0.06);
+  --screen-scanline: rgba(2, 6, 23, 0.18);
+  --screen-vignette: rgba(2, 6, 23, 0.52);
+}
+
+.snake-theme {
+  --screen-glow: rgba(34, 197, 94, 0.22);
+}
+
+.pong-theme {
+  --screen-glow: rgba(56, 189, 248, 0.2);
+}
+
+.memory-theme {
+  --screen-glow: rgba(245, 158, 11, 0.2);
+}
+
 body::before,
 body::after {
   content: "";
@@ -801,6 +820,53 @@ label {
 
 .stage-viewport {
   position: relative;
+  --cabinet-padding: clamp(0.85rem, 1.8vw, 1.05rem);
+  padding: var(--cabinet-padding);
+  border-radius: 28px;
+  border: 1px solid rgba(248, 250, 252, 0.08);
+  background:
+    linear-gradient(180deg, rgba(30, 41, 59, 0.92), rgba(2, 6, 23, 0.98)),
+    rgba(15, 23, 42, 0.96);
+  box-shadow:
+    0 20px 48px rgba(2, 6, 23, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.stage-viewport::before,
+.stage-viewport::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.stage-viewport::before {
+  inset: calc(var(--cabinet-padding) * 0.55);
+  border-radius: 24px;
+  background:
+    linear-gradient(145deg, var(--screen-reflection), transparent 32%),
+    radial-gradient(circle at 50% 12%, rgba(255, 255, 255, 0.08), transparent 42%);
+  box-shadow:
+    inset 0 0 26px rgba(0, 0, 0, 0.9),
+    0 0 40px var(--screen-glow);
+  z-index: 0;
+}
+
+.stage-viewport::after {
+  inset: var(--cabinet-padding);
+  border-radius: 20px;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      var(--screen-scanline),
+      var(--screen-scanline) 1px,
+      transparent 1px,
+      transparent 3px
+    ),
+    radial-gradient(circle at center, transparent 58%, var(--screen-vignette) 100%);
+  opacity: 0.7;
+  z-index: 1;
 }
 
 .stage-viewport-square {
@@ -813,15 +879,18 @@ label {
 }
 
 .game-canvas {
+  position: relative;
+  z-index: 0;
   display: block;
   width: 100%;
   height: auto;
-  border: 1px solid var(--border);
-  border-radius: 24px;
-  background: linear-gradient(180deg, #0b1220, #111827);
+  border-radius: 20px;
+  background: linear-gradient(180deg, #020617, #0f172a);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+    inset 0 0 20px rgba(0, 0, 0, 0.82),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 18px 34px rgba(2, 6, 23, 0.4),
+    0 0 42px var(--screen-glow);
 }
 
 .game-canvas-square {
@@ -833,7 +902,21 @@ label {
 }
 
 .memory-stage {
-  padding: 0.85rem;
+  position: relative;
+  z-index: 0;
+  display: grid;
+  align-content: center;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  padding: 1rem;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #020617, #0f172a);
+  box-shadow:
+    inset 0 0 20px rgba(0, 0, 0, 0.82),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 18px 34px rgba(2, 6, 23, 0.4),
+    0 0 42px var(--screen-glow);
+  overflow: hidden;
 }
 
 .memory-grid {
@@ -918,13 +1001,13 @@ label {
 
 .game-overlay {
   position: absolute;
-  inset: 1rem;
+  inset: calc(var(--cabinet-padding) + 0.3rem);
   display: grid;
   align-content: center;
   justify-items: center;
   gap: 0.8rem;
   padding: 1.5rem;
-  border-radius: 24px;
+  border-radius: 22px;
   border: 1px solid var(--border-strong);
   background: rgba(15, 23, 42, 0.88);
   box-shadow: var(--shadow-md);
@@ -941,7 +1024,7 @@ label {
 }
 
 .game-overlay-compact {
-  inset: auto 1rem 1rem;
+  inset: auto calc(var(--cabinet-padding) + 0.3rem) calc(var(--cabinet-padding) + 0.3rem);
   max-width: 30rem;
   justify-items: start;
   text-align: left;
@@ -1484,17 +1567,28 @@ label[for] > span {
     padding: 1rem;
   }
 
+  .stage-viewport {
+    --cabinet-padding: 0.65rem;
+    border-radius: 22px;
+  }
+
   .game-canvas {
-    border-radius: 18px;
+    border-radius: 16px;
+  }
+
+  .memory-stage {
+    padding: 0.75rem;
+    border-radius: 16px;
   }
 
   .game-overlay {
-    inset: 0.75rem;
+    inset: calc(var(--cabinet-padding) + 0.25rem);
     padding: 1.1rem;
+    border-radius: 18px;
   }
 
   .game-overlay-compact {
-    inset: auto 0.75rem 0.75rem;
+    inset: auto calc(var(--cabinet-padding) + 0.25rem) calc(var(--cabinet-padding) + 0.25rem);
     max-width: none;
   }
 }
