@@ -16,6 +16,7 @@ COPY --from=build /src/RetroArcade.Server.exe ./RetroArcade.Server.exe
 COPY index.html ./index.html
 COPY styles.css ./styles.css
 COPY app.js ./app.js
+COPY i18n.js ./i18n.js
 COPY snake.html ./snake.html
 COPY pong.html ./pong.html
 COPY memory.html ./memory.html
