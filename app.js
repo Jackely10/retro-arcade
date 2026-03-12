@@ -312,28 +312,377 @@ function recordPongMatchResult(didWin) {
   });
 }
 
+function formatArcadeNumber(value) {
+  const parsedValue = Number(value);
+  if (!Number.isFinite(parsedValue)) {
+    return "0";
+  }
+  try {
+    return new Intl.NumberFormat(document.documentElement.lang || undefined).format(parsedValue);
+  } catch (error) {
+    return String(Math.round(parsedValue));
+  }
+}
+
+function getArcadeDateLabel(daysAgo) {
+  const safeDays = clamp(Number(daysAgo) || 0, 0, 365);
+  const date = new Date();
+  date.setDate(date.getDate() - safeDays);
+  try {
+    return new Intl.DateTimeFormat(document.documentElement.lang || undefined, {
+      month: "short",
+      day: "numeric",
+    }).format(date);
+  } catch (error) {
+    return `${date.getDate()}.${date.getMonth() + 1}.`;
+  }
+}
+
+function getArcadeAvatarInitials(name) {
+  const normalizedName = normalizeArcadeProfileName(name) || t("common.guest", {}, "Gast");
+  const fragments = normalizedName.split(" ").filter(Boolean);
+  if (fragments.length === 0) {
+    return "GA";
+  }
+  if (fragments.length === 1) {
+    return fragments[0].slice(0, 2).toUpperCase();
+  }
+  return `${fragments[0][0] || ""}${fragments[1][0] || ""}`.toUpperCase();
+}
+
+function getArcadeLevelData(stats, memoryBestMoves) {
+  const memoryEfficiency = memoryBestMoves === null ? 0 : Math.max(0, 26 - memoryBestMoves) * 35;
+  const xp = (
+    stats.totalStarts * 40
+    + stats.totalWins * 140
+    + stats.snake.highScore * 28
+    + stats.memory.wins * 110
+    + stats.pong.wins * 180
+    + stats.pong.matches * 20
+    + memoryEfficiency
+  );
+  const levelSize = 450;
+  const level = Math.floor(xp / levelSize) + 1;
+  const levelFloor = (level - 1) * levelSize;
+  const levelCeiling = level * levelSize;
+  const progressPercent = clamp(((xp - levelFloor) / levelSize) * 100, 0, 100);
+
+  let titleKey = "index.profile.level.rookie";
+  if (level >= 9) {
+    titleKey = "index.profile.level.legend";
+  } else if (level >= 7) {
+    titleKey = "index.profile.level.elite";
+  } else if (level >= 5) {
+    titleKey = "index.profile.level.pro";
+  } else if (level >= 3) {
+    titleKey = "index.profile.level.rising";
+  }
+
+  return {
+    xp,
+    level,
+    levelFloor,
+    levelCeiling,
+    progressPercent,
+    titleKey,
+  };
+}
+
+function getArcadeSignatureFocusKey(stats, memoryBestMoves) {
+  const snakeValue = stats.snake.highScore * 30 + stats.snake.plays * 12;
+  const memoryValue = stats.memory.wins * 170 + (memoryBestMoves === null ? 0 : Math.max(0, 28 - memoryBestMoves) * 32);
+  const pongValue = stats.pong.wins * 200 + stats.pong.matches * 26;
+
+  if (pongValue >= snakeValue && pongValue >= memoryValue && pongValue > 0) {
+    return "pong";
+  }
+  if (memoryValue >= snakeValue && memoryValue > 0) {
+    return "memory";
+  }
+  if (snakeValue > 0) {
+    return "snake";
+  }
+  return "arcade";
+}
+
+function getArcadeFocusLabel(focusKey) {
+  switch (focusKey) {
+    case "snake":
+      return t("index.leaderboard.focus.snake", {}, "Snake");
+    case "memory":
+      return t("index.leaderboard.focus.memory", {}, "Memory");
+    case "pong":
+      return t("index.leaderboard.focus.pong", {}, "Pong");
+    default:
+      return t("index.leaderboard.focus.arcade", {}, "Arcade");
+  }
+}
+
+function buildArcadeLeaderboardEntries(stats, profileName, memoryBestMoves) {
+  const levelData = getArcadeLevelData(stats, memoryBestMoves);
+  const legends = [
+    { name: "Nova Hex", focusKey: "snake", score: 4820, dateOffset: 0 },
+    { name: "Mina Volt", focusKey: "pong", score: 4380, dateOffset: 1 },
+    { name: "Echo Lynx", focusKey: "memory", score: 3940, dateOffset: 2 },
+    { name: "Kiro Dash", focusKey: "snake", score: 3660, dateOffset: 4 },
+    { name: "Sol Byte", focusKey: "pong", score: 3320, dateOffset: 7 },
+  ];
+
+  const entries = legends.map((legend) => ({
+    name: legend.name,
+    focusKey: legend.focusKey,
+    focusLabel: getArcadeFocusLabel(legend.focusKey),
+    score: legend.score,
+    updatedLabel: getArcadeDateLabel(legend.dateOffset),
+    subtitle: t("index.leaderboard.legendLabel", {}, "Arcade legend"),
+    isCurrent: false,
+  }));
+
+  entries.push({
+    name: profileName,
+    focusKey: getArcadeSignatureFocusKey(stats, memoryBestMoves),
+    focusLabel: getArcadeFocusLabel(getArcadeSignatureFocusKey(stats, memoryBestMoves)),
+    score: levelData.xp,
+    updatedLabel: getArcadeDateLabel(0),
+    subtitle: t("index.leaderboard.currentLabel", {}, "Current pilot"),
+    isCurrent: true,
+  });
+
+  return entries
+    .sort((leftEntry, rightEntry) => {
+      if (rightEntry.score !== leftEntry.score) {
+        return rightEntry.score - leftEntry.score;
+      }
+      if (leftEntry.isCurrent !== rightEntry.isCurrent) {
+        return leftEntry.isCurrent ? -1 : 1;
+      }
+      return leftEntry.name.localeCompare(rightEntry.name);
+    })
+    .map((entry, index) => ({
+      rank: index + 1,
+      ...entry,
+    }));
+}
+
+function getArcadeAchievements(stats, snakeHighScore, memoryBestMoves) {
+  const starterValue = stats.totalStarts;
+  const snakeValue = snakeHighScore;
+  const pongValue = stats.pong.wins;
+  const memoryUnlocked = memoryBestMoves !== null && memoryBestMoves <= 18;
+  const memoryRatio = memoryBestMoves === null ? 0 : clamp((30 - memoryBestMoves) / 12, 0, 1);
+
+  return [
+    {
+      id: "starter",
+      unlocked: starterValue >= 5,
+      ratio: clamp(starterValue / 5, 0, 1),
+      progressText: t(
+        "index.achievement.starter.progress",
+        { value: formatArcadeNumber(Math.min(starterValue, 5)), target: formatArcadeNumber(5) },
+        `${formatArcadeNumber(Math.min(starterValue, 5))} / ${formatArcadeNumber(5)} starts`
+      ),
+    },
+    {
+      id: "snake",
+      unlocked: snakeValue >= 20,
+      ratio: clamp(snakeValue / 20, 0, 1),
+      progressText: t(
+        "index.achievement.snake.progress",
+        { value: formatArcadeNumber(Math.min(snakeValue, 20)), target: formatArcadeNumber(20) },
+        `${formatArcadeNumber(Math.min(snakeValue, 20))} / ${formatArcadeNumber(20)} score`
+      ),
+    },
+    {
+      id: "memory",
+      unlocked: memoryUnlocked,
+      ratio: memoryRatio,
+      progressText: memoryBestMoves === null
+        ? t("index.achievement.memory.none", {}, "No clear yet")
+        : t(
+          "index.achievement.memory.progress",
+          { value: formatArcadeNumber(memoryBestMoves), target: formatArcadeNumber(18) },
+          `Best ${formatArcadeNumber(memoryBestMoves)} / ${formatArcadeNumber(18)} moves`
+        ),
+    },
+    {
+      id: "pong",
+      unlocked: pongValue >= 3,
+      ratio: clamp(pongValue / 3, 0, 1),
+      progressText: t(
+        "index.achievement.pong.progress",
+        { value: formatArcadeNumber(Math.min(pongValue, 3)), target: formatArcadeNumber(3) },
+        `${formatArcadeNumber(Math.min(pongValue, 3))} / ${formatArcadeNumber(3)} wins`
+      ),
+    },
+  ];
+}
+
+function renderArcadeLeaderboard(entries) {
+  const labels = {
+    rank: t("index.leaderboard.rank", {}, "Rank"),
+    player: t("index.leaderboard.player", {}, "Player"),
+    focus: t("index.leaderboard.focus", {}, "Focus"),
+    score: t("index.leaderboard.score", {}, "Score"),
+    updated: t("index.leaderboard.updated", {}, "Updated"),
+  };
+
+  document.querySelectorAll("[data-arcade-leaderboard-body]").forEach((tbody) => {
+    tbody.textContent = "";
+
+    entries.forEach((entry) => {
+      const row = document.createElement("tr");
+      row.className = "highscore-row";
+      if (entry.isCurrent) {
+        row.classList.add("is-current-player");
+      }
+      if (entry.rank === 1) {
+        row.classList.add("is-top-rank");
+      }
+
+      const rankCell = document.createElement("td");
+      rankCell.setAttribute("data-label", labels.rank);
+      const rankBadge = document.createElement("span");
+      rankBadge.className = "rank-badge";
+      if (entry.rank === 1) {
+        rankBadge.classList.add("gold");
+      } else if (entry.rank === 2) {
+        rankBadge.classList.add("silver");
+      } else if (entry.rank === 3) {
+        rankBadge.classList.add("bronze");
+      }
+      rankBadge.textContent = String(entry.rank);
+      rankCell.appendChild(rankBadge);
+
+      const playerCell = document.createElement("td");
+      playerCell.setAttribute("data-label", labels.player);
+      const userCell = document.createElement("div");
+      userCell.className = "user-cell";
+      const avatar = document.createElement("span");
+      avatar.className = "user-avatar";
+      avatar.textContent = getArcadeAvatarInitials(entry.name);
+      const nameStack = document.createElement("div");
+      const playerName = document.createElement("strong");
+      playerName.textContent = entry.name;
+      const subtitle = document.createElement("span");
+      subtitle.className = "row-subtle";
+      subtitle.textContent = entry.subtitle;
+      nameStack.appendChild(playerName);
+      nameStack.appendChild(subtitle);
+      userCell.appendChild(avatar);
+      userCell.appendChild(nameStack);
+      playerCell.appendChild(userCell);
+
+      const focusCell = document.createElement("td");
+      focusCell.setAttribute("data-label", labels.focus);
+      const focusChip = document.createElement("span");
+      focusChip.className = "game-chip";
+      focusChip.textContent = entry.focusLabel;
+      focusCell.appendChild(focusChip);
+
+      const scoreCell = document.createElement("td");
+      scoreCell.className = "score-cell";
+      scoreCell.setAttribute("data-label", labels.score);
+      scoreCell.textContent = formatArcadeNumber(entry.score);
+
+      const dateCell = document.createElement("td");
+      dateCell.setAttribute("data-label", labels.updated);
+      dateCell.textContent = entry.updatedLabel;
+
+      row.appendChild(rankCell);
+      row.appendChild(playerCell);
+      row.appendChild(focusCell);
+      row.appendChild(scoreCell);
+      row.appendChild(dateCell);
+      tbody.appendChild(row);
+    });
+  });
+}
+
+function syncArcadeDashboard(stats, profileName, snakeHighScore, memoryBestMoves) {
+  const levelData = getArcadeLevelData(stats, memoryBestMoves);
+  const levelTitle = t(levelData.titleKey, {}, "Rookie Pilot");
+  const currentLevelXp = Math.max(levelData.xp - levelData.levelFloor, 0);
+  const remainingXp = Math.max(levelData.levelCeiling - levelData.xp, 0);
+  const achievements = getArcadeAchievements(stats, snakeHighScore, memoryBestMoves);
+  const unlockedCount = achievements.filter((achievement) => achievement.unlocked).length;
+
+  document.querySelectorAll("[data-arcade-avatar-initials]").forEach((node) => {
+    node.textContent = getArcadeAvatarInitials(profileName);
+  });
+  document.querySelectorAll("[data-arcade-level-number]").forEach((node) => {
+    node.textContent = String(levelData.level);
+  });
+  document.querySelectorAll("[data-arcade-level-title]").forEach((node) => {
+    node.textContent = levelTitle;
+  });
+  document.querySelectorAll("[data-arcade-profile-status]").forEach((node) => {
+    node.textContent = t("index.profile.status.local", {}, "Local pilot");
+  });
+  document.querySelectorAll("[data-arcade-xp-total]").forEach((node) => {
+    node.textContent = `${formatArcadeNumber(levelData.xp)} XP`;
+  });
+  document.querySelectorAll("[data-arcade-xp-fill]").forEach((node) => {
+    node.style.width = `${levelData.progressPercent.toFixed(1)}%`;
+  });
+  document.querySelectorAll("[data-arcade-xp-current]").forEach((node) => {
+    node.textContent = t(
+      "index.profile.xp.current",
+      { value: formatArcadeNumber(currentLevelXp), level: formatArcadeNumber(levelData.level) },
+      `${formatArcadeNumber(currentLevelXp)} XP in Level ${formatArcadeNumber(levelData.level)}`
+    );
+  });
+  document.querySelectorAll("[data-arcade-xp-next]").forEach((node) => {
+    node.textContent = t(
+      "index.profile.xp.next",
+      { value: formatArcadeNumber(remainingXp), level: formatArcadeNumber(levelData.level + 1) },
+      `${formatArcadeNumber(remainingXp)} XP to Level ${formatArcadeNumber(levelData.level + 1)}`
+    );
+  });
+  document.querySelectorAll("[data-arcade-badge-summary]").forEach((node) => {
+    node.textContent = t(
+      "index.achievement.summary",
+      { unlocked: formatArcadeNumber(unlockedCount), total: formatArcadeNumber(achievements.length) },
+      `${formatArcadeNumber(unlockedCount)} / ${formatArcadeNumber(achievements.length)} unlocked`
+    );
+  });
+
+  achievements.forEach((achievement) => {
+    document.querySelectorAll(`[data-achievement-card="${achievement.id}"]`).forEach((card) => {
+      card.classList.toggle("is-unlocked", achievement.unlocked);
+    });
+    document.querySelectorAll(`[data-achievement-fill="${achievement.id}"]`).forEach((node) => {
+      node.style.width = `${(achievement.ratio * 100).toFixed(1)}%`;
+    });
+    document.querySelectorAll(`[data-achievement-progress="${achievement.id}"]`).forEach((node) => {
+      node.textContent = achievement.progressText;
+    });
+  });
+
+  renderArcadeLeaderboard(buildArcadeLeaderboardEntries(stats, profileName, memoryBestMoves));
+}
+
 function getArcadeStatDisplayValue(statKey, stats) {
   switch (statKey) {
     case "total-starts":
-      return String(stats.totalStarts);
+      return formatArcadeNumber(stats.totalStarts);
     case "total-wins":
-      return String(stats.totalWins);
+      return formatArcadeNumber(stats.totalWins);
     case "snake-plays":
-      return String(stats.snake.plays);
+      return formatArcadeNumber(stats.snake.plays);
     case "snake-total-score":
-      return String(stats.snake.totalScore);
+      return formatArcadeNumber(stats.snake.totalScore);
     case "memory-plays":
-      return String(stats.memory.plays);
+      return formatArcadeNumber(stats.memory.plays);
     case "memory-wins":
-      return String(stats.memory.wins);
+      return formatArcadeNumber(stats.memory.wins);
     case "pong-matches":
-      return String(stats.pong.matches);
+      return formatArcadeNumber(stats.pong.matches);
     case "pong-wins":
-      return String(stats.pong.wins);
+      return formatArcadeNumber(stats.pong.wins);
     case "pong-losses":
-      return String(stats.pong.losses);
+      return formatArcadeNumber(stats.pong.losses);
     case "pong-record":
-      return `${stats.pong.wins} - ${stats.pong.losses}`;
+      return `${formatArcadeNumber(stats.pong.wins)} - ${formatArcadeNumber(stats.pong.losses)}`;
     default:
       return "0";
   }
@@ -342,12 +691,12 @@ function getArcadeStatDisplayValue(statKey, stats) {
 function syncStoredRecords() {
   const snakeHighScore = getSnakeHighScore();
   document.querySelectorAll('[data-arcade-record="snake-score"]').forEach((node) => {
-    node.textContent = String(snakeHighScore);
+    node.textContent = formatArcadeNumber(snakeHighScore);
   });
 
   const memoryBestMoves = getMemoryBestMoves();
   document.querySelectorAll('[data-arcade-record="memory-best-moves"]').forEach((node) => {
-    node.textContent = memoryBestMoves === null ? "--" : String(memoryBestMoves);
+    node.textContent = memoryBestMoves === null ? "--" : formatArcadeNumber(memoryBestMoves);
   });
 
   const profileName = getArcadeProfileName();
@@ -377,6 +726,8 @@ function syncStoredRecords() {
   document.querySelectorAll('[data-arcade-stat]').forEach((node) => {
     node.textContent = getArcadeStatDisplayValue(node.getAttribute('data-arcade-stat'), stats);
   });
+
+  syncArcadeDashboard(stats, profileName, snakeHighScore, memoryBestMoves);
 }
 
 function initGlobalArcadeUi() {
@@ -430,6 +781,178 @@ function initGlobalArcadeUi() {
       }
     });
   });
+
+  document.querySelectorAll('[data-nav-toggle]').forEach((button) => {
+    if (button.dataset.arcadeBound === 'true') {
+      return;
+    }
+    button.dataset.arcadeBound = 'true';
+
+    const header = button.closest('.main-header');
+    const controlledId = button.getAttribute('aria-controls');
+    const nav = controlledId ? document.getElementById(controlledId) : (header ? header.querySelector('.main-nav') : null);
+    if (!header) {
+      return;
+    }
+
+    const syncNavState = () => {
+      const expanded = header.classList.contains('is-nav-open');
+      button.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+      button.setAttribute('aria-label', expanded ? t('common.navClose', {}, 'Menue schliessen') : t('common.navOpen', {}, 'Menue oeffnen'));
+    };
+
+    button.addEventListener('click', () => {
+      header.classList.toggle('is-nav-open');
+      syncNavState();
+    });
+
+    if (nav) {
+      nav.querySelectorAll('a').forEach((link) => {
+        link.addEventListener('click', () => {
+          if (!window.matchMedia('(max-width: 860px)').matches) {
+            return;
+          }
+          header.classList.remove('is-nav-open');
+          syncNavState();
+        });
+      });
+    }
+
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 860 && header.classList.contains('is-nav-open')) {
+        header.classList.remove('is-nav-open');
+      }
+      syncNavState();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && header.classList.contains('is-nav-open')) {
+        header.classList.remove('is-nav-open');
+        syncNavState();
+      }
+    });
+
+    registerArcadeUiRefresh(syncNavState);
+    syncNavState();
+  });
+
+  const arcadeLobby = document.querySelector('.arcade-lobby');
+  const revealCards = arcadeLobby ? Array.from(arcadeLobby.querySelectorAll('[data-reveal-card]')) : [];
+  if (arcadeLobby && revealCards.length > 0) {
+    arcadeLobby.classList.add('is-reveal-ready');
+    revealCards.forEach((card, index) => {
+      card.style.setProperty('--reveal-delay', `${Math.min(index * 80, 240)}ms`);
+    });
+
+    if ('IntersectionObserver' in window) {
+      const observer = new window.IntersectionObserver((entries, activeObserver) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) {
+            return;
+          }
+          entry.target.classList.add('is-visible');
+          activeObserver.unobserve(entry.target);
+        });
+      }, {
+        threshold: 0.18,
+        rootMargin: '0px 0px -10% 0px',
+      });
+
+      revealCards.forEach((card) => {
+        observer.observe(card);
+      });
+    } else {
+      revealCards.forEach((card) => {
+        card.classList.add('is-visible');
+      });
+    }
+  }
+
+  const gameGrid = document.querySelector('[data-game-grid]');
+  const gameSearch = document.querySelector('[data-game-search]');
+  const emptyState = document.querySelector('[data-game-grid-empty]');
+  const filterButtons = Array.from(document.querySelectorAll('[data-filter-button]'));
+  const gameCards = gameGrid ? Array.from(gameGrid.querySelectorAll('[data-game-card]')) : [];
+  if (gameGrid && gameSearch && emptyState && filterButtons.length > 0 && gameCards.length > 0) {
+    let activeFilter = 'all';
+    let searchDebounceId = 0;
+    let filterFeedbackId = 0;
+
+    const updateActiveFilterButton = () => {
+      filterButtons.forEach((button) => {
+        const isActive = button.dataset.filter === activeFilter;
+        button.classList.toggle('is-active', isActive);
+        button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      });
+    };
+
+    const triggerFilterFeedback = () => {
+      gameGrid.classList.remove('is-filtering');
+      void gameGrid.offsetWidth;
+      gameGrid.classList.add('is-filtering');
+      window.clearTimeout(filterFeedbackId);
+      filterFeedbackId = window.setTimeout(() => {
+        gameGrid.classList.remove('is-filtering');
+      }, 220);
+    };
+
+    const applyGameFilters = (options) => {
+      const shouldAnimate = !(options && options.animate === false);
+      const query = String(gameSearch.value || '').trim().toLowerCase();
+      let visibleCount = 0;
+
+      gameCards.forEach((card) => {
+        const categories = String(card.dataset.gameCategory || '').toLowerCase().split(/\s+/).filter(Boolean);
+        const searchIndex = String(card.dataset.searchIndex || card.textContent || '').toLowerCase();
+        const matchesFilter = activeFilter === 'all' || categories.includes(activeFilter);
+        const matchesSearch = query === '' || searchIndex.includes(query);
+        const isVisible = matchesFilter && matchesSearch;
+
+        card.hidden = !isVisible;
+        card.classList.toggle('is-filtered-out', !isVisible);
+        card.setAttribute('aria-hidden', isVisible ? 'false' : 'true');
+
+        if (isVisible) {
+          visibleCount += 1;
+        }
+      });
+
+      emptyState.hidden = visibleCount > 0;
+
+      if (shouldAnimate) {
+        triggerFilterFeedback();
+      }
+    };
+
+    filterButtons.forEach((button) => {
+      if (button.dataset.arcadeBound === 'true') {
+        return;
+      }
+      button.dataset.arcadeBound = 'true';
+      button.addEventListener('click', () => {
+        activeFilter = button.dataset.filter || 'all';
+        updateActiveFilterButton();
+        applyGameFilters({ animate: true });
+      });
+    });
+
+    if (gameSearch.dataset.arcadeBound !== 'true') {
+      gameSearch.dataset.arcadeBound = 'true';
+      gameSearch.addEventListener('input', () => {
+        window.clearTimeout(searchDebounceId);
+        searchDebounceId = window.setTimeout(() => {
+          applyGameFilters({ animate: true });
+        }, 200);
+      });
+    }
+
+    registerArcadeUiRefresh(() => {
+      updateActiveFilterButton();
+    });
+
+    updateActiveFilterButton();
+    applyGameFilters({ animate: false });
+  }
 
   syncStoredRecords();
 }
@@ -2106,4 +2629,7 @@ function initMemoryPage() {
 initSnakePage();
 initPongPage();
 initMemoryPage();
+
+
+
 

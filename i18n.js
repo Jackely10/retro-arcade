@@ -1,4 +1,4 @@
-﻿(function () {
+(function () {
   const STORAGE_KEY = 'retroArcade.language';
   const SUPPORTED_LANGUAGES = ['de', 'en', 'fr'];
   const refreshListeners = new Set();
@@ -28,6 +28,33 @@
       'common.soundButton.off': 'Sound: OFF',
       'common.soundLabel.on': 'ON',
       'common.soundLabel.off': 'OFF',
+      'common.navOpen': 'Open menu',
+      'common.navClose': 'Close menu',
+      'index.profile.status.local': 'Local pilot',
+      'index.profile.level.rookie': 'Rookie Pilot',
+      'index.profile.level.rising': 'Rising Contender',
+      'index.profile.level.pro': 'Pro Challenger',
+      'index.profile.level.elite': 'Elite Operator',
+      'index.profile.level.legend': 'Arcade Legend',
+      'index.profile.xp.current': '{value} XP in Level {level}',
+      'index.profile.xp.next': '{value} XP to Level {level}',
+      'index.leaderboard.rank': 'Rank',
+      'index.leaderboard.player': 'Player',
+      'index.leaderboard.focus': 'Focus',
+      'index.leaderboard.score': 'Score',
+      'index.leaderboard.updated': 'Updated',
+      'index.leaderboard.legendLabel': 'Arcade legend',
+      'index.leaderboard.currentLabel': 'Current pilot',
+      'index.leaderboard.focus.snake': 'Snake',
+      'index.leaderboard.focus.memory': 'Memory',
+      'index.leaderboard.focus.pong': 'Pong',
+      'index.leaderboard.focus.arcade': 'Arcade',
+      'index.achievement.summary': '{unlocked} / {total} unlocked',
+      'index.achievement.starter.progress': '{value} / {target} starts',
+      'index.achievement.snake.progress': '{value} / {target} score',
+      'index.achievement.memory.none': 'No clear yet',
+      'index.achievement.memory.progress': 'Best {value} / {target} moves',
+      'index.achievement.pong.progress': '{value} / {target} wins',
       'snake.best.open': 'Best: open',
       'snake.best.value': 'Best: {value}',
       'snake.status.ready': 'Ready',
@@ -162,6 +189,33 @@
       'common.soundButton.off': 'Son : OFF',
       'common.soundLabel.on': 'ON',
       'common.soundLabel.off': 'OFF',
+      'common.navOpen': 'Ouvrir le menu',
+      'common.navClose': 'Fermer le menu',
+      'index.profile.status.local': 'Pilote local',
+      'index.profile.level.rookie': 'Pilote rookie',
+      'index.profile.level.rising': 'Pretendant en vue',
+      'index.profile.level.pro': 'Challenger pro',
+      'index.profile.level.elite': 'Operateur elite',
+      'index.profile.level.legend': 'Legende arcade',
+      'index.profile.xp.current': '{value} XP dans le niveau {level}',
+      'index.profile.xp.next': '{value} XP avant le niveau {level}',
+      'index.leaderboard.rank': 'Rang',
+      'index.leaderboard.player': 'Joueur',
+      'index.leaderboard.focus': 'Focus',
+      'index.leaderboard.score': 'Score',
+      'index.leaderboard.updated': 'Maj',
+      'index.leaderboard.legendLabel': 'Legende arcade',
+      'index.leaderboard.currentLabel': 'Pilote actuel',
+      'index.leaderboard.focus.snake': 'Snake',
+      'index.leaderboard.focus.memory': 'Memory',
+      'index.leaderboard.focus.pong': 'Pong',
+      'index.leaderboard.focus.arcade': 'Arcade',
+      'index.achievement.summary': '{unlocked} / {total} debloques',
+      'index.achievement.starter.progress': '{value} / {target} lancements',
+      'index.achievement.snake.progress': '{value} / {target} score',
+      'index.achievement.memory.none': 'Aucun clear pour l instant',
+      'index.achievement.memory.progress': 'Best {value} / {target} coups',
+      'index.achievement.pong.progress': '{value} / {target} victoires',
       'snake.best.open': 'Best : libre',
       'snake.best.value': 'Best : {value}',
       'snake.status.ready': 'Pret',
@@ -444,8 +498,20 @@
     );
     applyText('.skip-link', { en: 'Skip to content', fr: 'Aller au contenu' });
     applyAttr('.nav-links', 'aria-label', { en: 'Games navigation', fr: 'Navigation des jeux' });
+    applyText('.nav-links a[href="index.html"]', { en: 'Home', fr: 'Accueil' });
     applyText('.nav-links a[href="#player-deck"]', { en: 'Player Deck', fr: 'Deck joueur' });
-    applyText('.nav-links a[href="#game-floor"]', { en: 'Cabinets', fr: 'Bornes' });
+    applyText('.nav-links a[href="#game-floor"]', { en: 'Games', fr: 'Jeux' });
+    applyText('.nav-links a[href="pong.html"]', { en: 'Pong Online', fr: 'Pong Online' });
+    applyAttr('.filter-section', 'aria-label', { en: 'Filter games', fr: 'Filtrer les jeux' });
+    applyAttr('#game-search', 'placeholder', { en: 'Find your game...', fr: 'Trouve ton jeu...' });
+    applyAttr('#game-search', 'aria-label', { en: 'Search games', fr: 'Rechercher des jeux' });
+    applyAttr('.category-pills', 'aria-label', { en: 'Filter by category', fr: 'Filtrer par categorie' });
+    applyText('.pill[data-filter="all"]', { en: 'All', fr: 'Tous' });
+    applyText('.pill[data-filter="action"]', { en: 'Action', fr: 'Action' });
+    applyText('.pill[data-filter="puzzle"]', { en: 'Puzzle', fr: 'Puzzle' });
+    applyText('.pill[data-filter="retro"]', { en: 'Retro', fr: 'Retro' });
+    applyText('.pill[data-filter="multiplayer"]', { en: 'Online', fr: 'En ligne' });
+    applyText('[data-game-grid-empty]', { en: 'No games match your search or active filter.', fr: 'Aucun jeu ne correspond a ta recherche ou au filtre actif.' });
     applyText('.arcade-marquee h1', { en: 'Choose your cabinet', fr: 'Choisis ta borne' });
     applyText('.arcade-marquee .lead', { en: 'The main menu is now the control center of the arcade: launch a game, update your local profile, track your progress, and jump straight back here afterward.', fr: 'Le menu principal devient le centre de l arcade : lance un jeu, gere ton profil local, suis ta progression et reviens ici en un instant.' });
     applyText('.hero-actions .button-primary', { en: 'Open Player Deck', fr: 'Ouvrir le deck joueur' });
@@ -454,13 +520,36 @@
     applyText('.arcade-status-grid .lobby-monitor:last-child .eyebrow', { en: 'Insert Coin', fr: 'Insert Coin' });
     applyText('#player-deck .section-heading h2', { en: 'Your meta system is live.', fr: 'Ton meta-systeme est actif.' });
     applyText('#player-deck .section-heading .lead', { en: 'A shared player name, persistent arcade starts, wins, and game stats turn the three games into one connected retro arcade.', fr: 'Un nom partage, des lancements persistants, des victoires et des stats communes transforment les trois jeux en une seule arcade retro coherente.' });
-    applyText('#player-deck .meta-card[data-arcade-profile-scope] .eyebrow', { en: 'Arcade Profile', fr: 'Profil Arcade' });
+    applyText('.profile-hub .eyebrow', { en: 'Arcade Profile', fr: 'Profil Arcade' });
+    applyText('.profile-hub h3', { en: 'Your pilot deck', fr: 'Ton deck pilote' });
     applyText('label[for="arcade-profile-name"] span', { en: 'Player name', fr: 'Nom du joueur' });
     applyAttr('#arcade-profile-name', 'placeholder', { en: 'For example Alex', fr: 'Par exemple Alex' });
     applyText('[data-arcade-profile-save]', { en: 'Save profile', fr: 'Enregistrer le profil' });
-    applyText('#player-deck .meta-card[data-arcade-profile-scope] .form-row .button-secondary', { en: 'Go to cabinets', fr: 'Voir les bornes' });
-    applyText('#player-deck .meta-card:nth-of-type(2) .eyebrow', { en: 'Progress', fr: 'Progression' });
-    applyText('#player-deck .meta-card:nth-of-type(2) .meta-hint', { en: 'Everything stays in your browser. No account, no external server, no reset from the website.', fr: 'Tout reste dans ton navigateur. Aucun compte, aucun serveur externe, aucun reset par le site.' });
+    applyText('.profile-hub .form-row .button-secondary', { en: 'Go to games', fr: 'Voir les jeux' });
+    applyText('.xp-label', { en: 'Arcade XP', fr: 'XP Arcade' });
+    applyText('.profile-stat[data-profile-stat="starts"] span', { en: 'Games', fr: 'Jeux' });
+    applyText('.profile-stat[data-profile-stat="wins"] span', { en: 'Wins', fr: 'Victoires' });
+    applyText('.profile-stat[data-profile-stat="snake"] span', { en: 'Snake Best', fr: 'Best Snake' });
+    applyText('.profile-stat[data-profile-stat="memory"] span', { en: 'Memory Best', fr: 'Best Memory' });
+    applyText('.highscore-card .eyebrow', { en: 'Hall of Fame', fr: 'Hall of Fame' });
+    applyText('.highscore-card h3', { en: 'Top Players', fr: 'Top joueurs' });
+    applyText('.highscore-card .btn-text', { en: 'Games', fr: 'Jeux' });
+    applyText('.leaderboard-hint', { en: 'Local legends plus your current arcade rating at a glance.', fr: 'Les legendes locales et ton rating arcade actuel en un coup d oeil.' });
+    applyText('.highscore-table thead th:nth-child(1)', { en: 'Rank', fr: 'Rang' });
+    applyText('.highscore-table thead th:nth-child(2)', { en: 'Player', fr: 'Joueur' });
+    applyText('.highscore-table thead th:nth-child(3)', { en: 'Focus', fr: 'Focus' });
+    applyText('.highscore-table thead th:nth-child(4)', { en: 'Score', fr: 'Score' });
+    applyText('.highscore-table thead th:nth-child(5)', { en: 'Updated', fr: 'Maj' });
+    applyText('.achievement-panel .eyebrow', { en: 'Achievements', fr: 'Succes' });
+    applyText('.achievement-panel h3', { en: 'Badge Gallery', fr: 'Galerie de badges' });
+    applyText('[data-achievement-card="starter"] strong', { en: 'Cabinet Hopper', fr: 'Cabinet Hopper' });
+    applyText('[data-achievement-card="starter"] p', { en: 'Launch 5 games in the arcade.', fr: 'Lance 5 jeux dans l arcade.' });
+    applyText('[data-achievement-card="snake"] strong', { en: 'Snake Hunter', fr: 'Snake Hunter' });
+    applyText('[data-achievement-card="snake"] p', { en: 'Reach 20 points in a single Snake run.', fr: 'Atteins 20 points dans une partie de Snake.' });
+    applyText('[data-achievement-card="memory"] strong', { en: 'Memory Ace', fr: 'Memory Ace' });
+    applyText('[data-achievement-card="memory"] p', { en: 'Finish Memory in 18 moves or less.', fr: 'Termine Memory en 18 coups ou moins.' });
+    applyText('[data-achievement-card="pong"] strong', { en: 'Arena Closer', fr: 'Arena Closer' });
+    applyText('[data-achievement-card="pong"] p', { en: 'Win 3 Pong matches for your trophy shelf.', fr: 'Gagne 3 matchs de Pong pour ta vitrine.' });
     applyText('#game-floor .section-heading h2', { en: 'Three cabinets are ready.', fr: 'Trois bornes sont pretes.' });
     applyText('#game-floor .section-heading .lead', { en: 'A consistent neon grid, a clear profile system, and visible records for a fast jump into the next round.', fr: 'Une grille neon coherente, un profil clair et des records visibles pour repartir vite dans une nouvelle manche.' });
     applyText('.snake-machine .machine-copy', { en: 'Eat orbs, keep growing, and keep your run alive as long as possible.', fr: 'Mange des orbes, continue de grandir et garde ta partie en vie le plus longtemps possible.' });
@@ -470,7 +559,7 @@
     applyText('.pong-machine .machine-cta', { en: 'Enter arena', fr: 'Entrer dans l arene' });
     applyText('.memory-machine .machine-copy', { en: 'Find every pair in as few moves as possible and beat your local record.', fr: 'Trouve toutes les paires avec le moins de coups possible et bats ton record local.' });
     applyText('.memory-machine .machine-cta', { en: 'Start game', fr: 'Lancer' });
-    applyText('.site-footer .footer-inner p:first-child', { en: 'Retro Arcade main menu with neon cabinets, profile, and local meta stats.', fr: 'Menu principal Retro Arcade avec bornes neon, profil et statistiques locales.' });
+    applyText('.site-footer .footer-inner p:first-child', { en: 'Retro Arcade main menu with neon cabinets, profile, local highscores, and meta stats.', fr: 'Menu principal Retro Arcade avec bornes neon, profil, highscores locaux et statistiques meta.' });
   }
 
   function applySnakeTranslations() {
@@ -695,4 +784,7 @@
     refreshAll();
   }
 }());
+
+
+
 

@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="de">
 <head>
   <meta charset="utf-8">
@@ -8,24 +8,35 @@
     name="description"
     content="Memory als eigenstaendige Browser-Game-Seite mit grossem Kartenraster."
   >
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body class="game-page memory-theme">
   <a class="skip-link" href="#content">Zum Inhalt springen</a>
 
-  <header class="topbar">
-    <div class="container topbar-inner">
-      <a class="brand" href="index.html">
-        <span class="brand-mark">RA</span>
-        <span>Retro Arcade</span>
+  <header class="topbar main-header">
+    <div class="container topbar-inner header-container">
+      <a class="brand logo" href="index.html">
+        <span class="brand-mark logo-icon">RA</span>
+        <span class="logo-text">RETRO<span>ARCADE</span></span>
       </a>
-      <nav class="nav-links" aria-label="Spiele Navigation">
-        <a href="index.html">Hauptmenue</a>
-        <a href="snake.html">Snake</a>
-        <a href="pong.html">Pong</a>
+      <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="memory-nav" aria-label="Menue oeffnen">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <nav class="nav-links main-nav" id="memory-nav" aria-label="Spiele Navigation">
+        <ul>
+          <li><a href="index.html">Hauptmenue</a></li>
+          <li><a href="snake.html">Snake</a></li>
+          <li><a href="pong.html">Pong</a></li>
+          <li><a class="active" href="memory.html">Memory</a></li>
+        </ul>
       </nav>
-      <div class="topbar-controls">
-        <button class="button button-secondary topbar-sound" data-arcade-sound-toggle type="button">Sound: AN</button>
+      <div class="topbar-controls header-actions">
+        <button class="button button-secondary btn-outline topbar-sound" data-arcade-sound-toggle type="button">Sound: AN</button>
       </div>
     </div>
   </header>
