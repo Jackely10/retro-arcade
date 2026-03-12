@@ -10,7 +10,7 @@ RUN mcs \
     -r:System.Web.Extensions.dll \
     server.cs Program.cs
 
-FROM mono:6.12-slim
+FROM mono:6.12
 WORKDIR /app
 COPY --from=build /src/RetroArcade.Server.exe ./RetroArcade.Server.exe
 COPY index.html ./index.html
