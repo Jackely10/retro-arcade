@@ -1,4 +1,4 @@
-﻿const yearNode = document.querySelector("#year");
+const yearNode = document.querySelector("#year");
 
 if (yearNode) {
   yearNode.textContent = String(new Date().getFullYear());
@@ -661,10 +661,10 @@ function initSnakePage() {
   function draw(gameOver) {
     context.clearRect(0, 0, canvas.width, canvas.height);
 
-    context.fillStyle = "#05040c";
+    context.fillStyle = "#0b1220";
     context.fillRect(0, 0, canvas.width, canvas.height);
 
-    context.strokeStyle = "rgba(0, 255, 0, 0.08)";
+    context.strokeStyle = "rgba(148, 163, 184, 0.08)";
     for (let offset = 0; offset <= canvas.width; offset += state.tileSize) {
       context.beginPath();
       context.moveTo(offset, 0);
@@ -676,9 +676,9 @@ function initSnakePage() {
       context.stroke();
     }
 
-    context.shadowColor = "#00ff00";
-    context.shadowBlur = 16;
-    context.fillStyle = "#00ff00";
+    context.shadowColor = "rgba(34, 197, 94, 0.45)";
+    context.shadowBlur = 14;
+    context.fillStyle = "#22c55e";
     context.fillRect(
       state.food.x * state.tileSize + 4,
       state.food.y * state.tileSize + 4,
@@ -688,7 +688,7 @@ function initSnakePage() {
 
     context.shadowBlur = 0;
     state.body.forEach((segment, index) => {
-      context.fillStyle = index === 0 ? "#d9ffe1" : "#00ff00";
+      context.fillStyle = index === 0 ? "#f8fafc" : "#94a3b8";
       context.fillRect(
         segment.x * state.tileSize + 3,
         segment.y * state.tileSize + 3,
@@ -698,13 +698,14 @@ function initSnakePage() {
     });
 
     if (gameOver) {
-      context.fillStyle = "rgba(6, 3, 15, 0.72)";
+      context.fillStyle = "rgba(15, 23, 42, 0.82)";
       context.fillRect(0, 0, canvas.width, canvas.height);
-      context.fillStyle = "#f7f4ff";
+      context.fillStyle = "#f8fafc";
       context.textAlign = "center";
-      context.font = 'bold 30px "Trebuchet MS"';
+      context.font = '600 30px Inter, "Segoe UI", sans-serif';
       context.fillText(t("snake.status.gameOver", {}, "Game Over"), canvas.width / 2, canvas.height / 2 - 14);
-      context.font = '18px "Trebuchet MS"';
+      context.fillStyle = "#cbd5e1";
+      context.font = '16px Inter, "Segoe UI", sans-serif';
       context.fillText(t("snake.canvas.hint", {}, "Leertaste oder Neu starten"), canvas.width / 2, canvas.height / 2 + 20);
     }
   }
@@ -1674,23 +1675,23 @@ function initPongPage() {
   }
 
   function drawOverlay(title, subtitle) {
-    context.fillStyle = "rgba(0, 10, 2, 0.78)";
+    context.fillStyle = "rgba(15, 23, 42, 0.82)";
     context.fillRect(0, 0, state.width, state.height);
-    context.fillStyle = "#00ff00";
+    context.fillStyle = "#f8fafc";
     context.textAlign = "center";
-    context.font = 'bold 34px "Segoe UI"';
+    context.font = '600 34px Inter, "Segoe UI", sans-serif';
     context.fillText(title, state.width / 2, state.height / 2 - 18);
-    context.fillStyle = "#d9ffe1";
-    context.font = '18px "Segoe UI"';
+    context.fillStyle = "#cbd5e1";
+    context.font = '16px Inter, "Segoe UI", sans-serif';
     context.fillText(subtitle, state.width / 2, state.height / 2 + 20);
   }
 
   function draw() {
     context.clearRect(0, 0, state.width, state.height);
-    context.fillStyle = "#05040c";
+    context.fillStyle = "#0b1220";
     context.fillRect(0, 0, state.width, state.height);
 
-    context.strokeStyle = "rgba(0, 255, 0, 0.18)";
+    context.strokeStyle = "rgba(148, 163, 184, 0.16)";
     context.setLineDash([14, 12]);
     context.beginPath();
     context.moveTo(state.width / 2, 0);
@@ -1701,14 +1702,14 @@ function initPongPage() {
     const leftY = state.role === "left" ? state.localPaddleY : state.paddles.left;
     const rightY = state.role === "right" ? state.localPaddleY : state.paddles.right;
 
-    context.fillStyle = "#00ff00";
+    context.fillStyle = "#f8fafc";
     context.fillRect(24, leftY, state.paddleWidth, state.paddleHeight);
-    context.fillStyle = "#66ff99";
+    context.fillStyle = "#22c55e";
     context.fillRect(state.width - 24 - state.paddleWidth, rightY, state.paddleWidth, state.paddleHeight);
 
-    context.shadowColor = "#66ff99";
-    context.shadowBlur = 18;
-    context.fillStyle = "#66ff99";
+    context.shadowColor = "rgba(248, 250, 252, 0.3)";
+    context.shadowBlur = 16;
+    context.fillStyle = "#e2e8f0";
     context.beginPath();
     context.arc(state.ball.x, state.ball.y, state.ballRadius, 0, Math.PI * 2);
     context.fill();
@@ -2105,44 +2106,4 @@ function initMemoryPage() {
 initSnakePage();
 initPongPage();
 initMemoryPage();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
