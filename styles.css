@@ -12,6 +12,8 @@
   --accent-strong: #16a34a;
   --accent-soft: rgba(34, 197, 94, 0.14);
   --accent-ring: rgba(34, 197, 94, 0.28);
+  --primary: #22c55e;
+  --primary-glow: rgba(34, 197, 94, 0.32);
   --border: rgba(248, 250, 252, 0.1);
   --border-strong: rgba(248, 250, 252, 0.14);
   --shadow-sm: 0 12px 28px rgba(2, 6, 23, 0.18);
@@ -61,14 +63,26 @@ body {
 
 .snake-theme {
   --screen-glow: rgba(34, 197, 94, 0.22);
+  --primary: #22c55e;
+  --primary-glow: rgba(34, 197, 94, 0.32);
+}
+
+.breakout-theme {
+  --screen-glow: rgba(251, 146, 60, 0.24);
+  --primary: #fb923c;
+  --primary-glow: rgba(251, 146, 60, 0.34);
 }
 
 .pong-theme {
   --screen-glow: rgba(56, 189, 248, 0.2);
+  --primary: #38bdf8;
+  --primary-glow: rgba(56, 189, 248, 0.32);
 }
 
 .memory-theme {
   --screen-glow: rgba(245, 158, 11, 0.2);
+  --primary: #f59e0b;
+  --primary-glow: rgba(245, 158, 11, 0.34);
 }
 
 body::before,
@@ -453,7 +467,7 @@ label {
 
 .arcade-machine-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 1.25rem;
 }
 
@@ -860,11 +874,17 @@ label {
   isolation: isolate;
 }
 
+.arcade-cabinet {
+  transform: translate3d(0, 0, 0);
+  will-change: transform, box-shadow, filter;
+}
+
 .stage-viewport::before,
 .stage-viewport::after {
   content: "";
   position: absolute;
   pointer-events: none;
+  transition: box-shadow 180ms ease, opacity 180ms ease, filter 180ms ease;
 }
 
 .stage-viewport::before {
@@ -895,6 +915,73 @@ label {
   z-index: 1;
 }
 
+@keyframes arcade-cabinet-shake {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  18% {
+    transform: translate3d(-6px, 3px, 0) rotate(-0.35deg);
+  }
+  36% {
+    transform: translate3d(5px, -4px, 0) rotate(0.28deg);
+  }
+  54% {
+    transform: translate3d(-4px, 2px, 0) rotate(-0.22deg);
+  }
+  72% {
+    transform: translate3d(3px, -2px, 0) rotate(0.18deg);
+  }
+}
+
+@keyframes arcade-cabinet-win-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 20px 48px rgba(2, 6, 23, 0.42),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04),
+      0 0 0 rgba(0, 0, 0, 0);
+    filter: saturate(1) brightness(1);
+  }
+  50% {
+    box-shadow:
+      0 24px 56px rgba(2, 6, 23, 0.48),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06),
+      0 0 52px var(--primary-glow);
+    filter: saturate(1.08) brightness(1.03);
+  }
+}
+
+@keyframes arcade-cabinet-screen-pulse {
+  0%,
+  100% {
+    opacity: 0.72;
+    filter: saturate(1) brightness(1);
+  }
+  50% {
+    opacity: 0.94;
+    filter: saturate(1.15) brightness(1.08);
+  }
+}
+
+.arcade-cabinet.is-shaking {
+  animation: arcade-cabinet-shake 360ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+.arcade-cabinet.cabinet-state-win {
+  animation: arcade-cabinet-win-pulse 1.75s ease-in-out infinite;
+}
+
+.arcade-cabinet.cabinet-state-win::before {
+  box-shadow:
+    inset 0 0 26px rgba(0, 0, 0, 0.9),
+    0 0 56px var(--primary-glow);
+}
+
+.arcade-cabinet.cabinet-state-win::after {
+  animation: arcade-cabinet-screen-pulse 1.75s ease-in-out infinite;
+}
+
 .stage-viewport-square {
   max-width: 42rem;
   margin: 0 auto;
@@ -910,6 +997,7 @@ label {
   display: block;
   width: 100%;
   height: auto;
+  touch-action: none;
   border-radius: 20px;
   background: linear-gradient(180deg, #020617, #0f172a);
   box-shadow:
@@ -1889,6 +1977,268 @@ label[for] > span {
     padding: 0 2px 4px;
   }
 }
+@keyframes pongLobbyPulse {
+  0% {
+    transform: scale(0.88);
+    box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.42);
+  }
+
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 14px rgba(56, 189, 248, 0);
+  }
+
+  100% {
+    transform: scale(0.88);
+    box-shadow: 0 0 0 0 rgba(56, 189, 248, 0);
+  }
+}
+
+.pong-stage-canvas {
+  transition: opacity var(--transition), filter var(--transition), transform var(--transition);
+}
+
+.pong-stage-canvas.is-obscured {
+  opacity: 0.26;
+  filter: blur(2px) saturate(0.82);
+  transform: scale(0.985);
+  pointer-events: none;
+}
+
+.pong-lobby-screen {
+  position: absolute;
+  inset: calc(var(--cabinet-padding) + 0.3rem);
+  display: grid;
+  align-content: center;
+  gap: 1.25rem;
+  padding: 2.5rem;
+  border-radius: 24px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.78)),
+    rgba(15, 23, 42, 0.74);
+  box-shadow: var(--shadow-md);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  z-index: 3;
+  transition: opacity var(--transition), transform var(--transition), visibility var(--transition);
+}
+
+.pong-lobby-screen.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(10px);
+}
+
+.pong-lobby-actions {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  align-items: stretch;
+}
+
+.pong-lobby-card {
+  flex: 1 1 0;
+  min-width: 0;
+  display: grid;
+  gap: 1rem;
+  padding: 2rem;
+  border-radius: 22px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.78), rgba(15, 23, 42, 0.92));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.pong-lobby-card h2 {
+  margin: 0;
+  font-size: clamp(1.8rem, 4vw, 2.4rem);
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.pong-lobby-kicker {
+  margin: 0;
+  color: var(--primary);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.pong-lobby-copy {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.pong-lobby-button {
+  min-height: 58px;
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+
+.pong-lobby-code-input {
+  min-height: 64px;
+  padding: 1rem 1.15rem;
+  border: 2px solid var(--primary);
+  border-radius: 18px;
+  background: rgba(2, 6, 23, 0.45);
+  color: var(--text);
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  font-size: clamp(1.25rem, 4vw, 1.5rem);
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.pong-lobby-code-input::placeholder {
+  letter-spacing: 0.2em;
+}
+
+.pong-lobby-code-input:focus {
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.16), 0 0 24px rgba(56, 189, 248, 0.14);
+}
+
+.pong-lobby-waiting {
+  display: grid;
+  justify-items: center;
+  gap: 1rem;
+  text-align: center;
+}
+
+.pong-lobby-status {
+  margin: 0;
+  color: #dbeafe;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.pong-room-code-display {
+  width: min(100%, 30rem);
+  display: grid;
+  gap: 0.5rem;
+  justify-items: center;
+  padding: 1.4rem 1.6rem;
+  border: 1px solid rgba(56, 189, 248, 0.24);
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(8, 47, 73, 0.28), rgba(15, 23, 42, 0.96));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 0 36px rgba(56, 189, 248, 0.12);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.pong-room-code-display:hover,
+.pong-room-code-display:focus-visible {
+  border-color: rgba(56, 189, 248, 0.42);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 0 44px rgba(56, 189, 248, 0.18);
+}
+
+.pong-room-code-display span,
+.pong-room-code-display small {
+  color: var(--subtle);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.pong-room-code-display strong {
+  color: var(--text);
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  font-size: clamp(3rem, 10vw, 4.8rem);
+  line-height: 1;
+  letter-spacing: 0.24em;
+  text-indent: 0.24em;
+}
+
+.pong-lobby-spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--primary);
+  animation: pongLobbyPulse 1.2s ease-out infinite;
+}
+
+.pong-lobby-waiting-copy {
+  max-width: 32rem;
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+@media (max-width: 900px) {
+  .pong-lobby-actions {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 760px) {
+  .pong-lobby-screen {
+    padding: 1.25rem;
+  }
+
+  .pong-lobby-card {
+    padding: 1.35rem;
+  }
+
+  .pong-lobby-code-input {
+    min-height: 60px;
+    font-size: 1.2rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .pong-lobby-screen {
+    inset: calc(var(--cabinet-padding) + 0.2rem);
+    padding: 1rem;
+  }
+
+  .pong-lobby-card {
+    gap: 0.85rem;
+    padding: 1.1rem;
+  }
+
+  .pong-lobby-card h2 {
+    font-size: clamp(1.45rem, 8vw, 1.9rem);
+  }
+
+  .pong-lobby-code-input {
+    min-height: 58px;
+    padding: 0.9rem 1rem;
+    font-size: 1.05rem;
+    letter-spacing: 0.22em;
+  }
+
+  .pong-room-code-display {
+    width: 100%;
+    padding: 1.15rem 1rem;
+  }
+
+  .pong-room-code-display strong {
+    font-size: clamp(2.4rem, 16vw, 3.3rem);
+    letter-spacing: 0.18em;
+    text-indent: 0.18em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pong-stage-canvas,
+  .pong-lobby-screen {
+    transition: none;
+  }
+
+  .pong-lobby-spinner {
+    animation: none;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -2436,6 +2786,97 @@ body.modal-open {
   overflow: hidden;
 }
 
+.ad-overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: rgba(2, 6, 23, 0.96);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 2600;
+  transition: opacity 0.3s ease;
+}
+
+.ad-overlay[hidden] {
+  display: none;
+}
+
+.ad-overlay.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.ad-card {
+  width: min(100%, 420px);
+  display: grid;
+  justify-items: center;
+  gap: 1rem;
+  padding: 2.25rem 1.85rem;
+  border: 1px solid rgba(248, 250, 252, 0.08);
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(2, 6, 23, 0.96), rgba(15, 23, 42, 0.98));
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.52);
+  text-align: center;
+  transform: scale(0.96) translateY(10px);
+  transition: transform 0.3s ease;
+}
+
+.ad-overlay.is-visible .ad-card {
+  transform: scale(1) translateY(0);
+}
+
+.ad-kicker {
+  margin: 0;
+  color: var(--subtle);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.ad-title {
+  margin: 0;
+  font-size: clamp(1.9rem, 5vw, 2.4rem);
+  line-height: 1.05;
+}
+
+.ad-countdown {
+  width: 118px;
+  height: 118px;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  border-radius: 999px;
+  border: 1px solid rgba(248, 250, 252, 0.12);
+  background: rgba(248, 250, 252, 0.04);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 0 28px rgba(248, 250, 252, 0.04);
+}
+
+.ad-countdown-value {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  font-size: clamp(2.7rem, 8vw, 3.4rem);
+  font-weight: 800;
+  line-height: 1;
+}
+
+.ad-countdown-label {
+  color: var(--subtle);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.ad-note {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -2624,10 +3065,12 @@ body.modal-open {
 }
 
 @media (max-width: 640px) {
+  .ad-overlay,
   .modal-overlay {
     padding: 1rem;
   }
 
+  .ad-card,
   .result-card {
     width: 100%;
     min-height: min(560px, calc(100vh - 2rem));
@@ -2649,6 +3092,8 @@ body.modal-open {
   .achievement-badge,
   .xp-fill,
   .achievement-track span,
+  .ad-overlay,
+  .ad-card,
   .modal-overlay,
   .result-card,
   .result-actions .button {
@@ -2657,5 +3102,1169 @@ body.modal-open {
 
   .modal-overlay.is-visible .result-card {
     animation: none;
+  }
+}
+
+:root {
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --ui-surface: rgba(255, 255, 255, 0.05);
+  --ui-surface-strong: rgba(15, 23, 42, 0.74);
+  --ui-surface-deep: rgba(7, 11, 19, 0.9);
+  --ui-stroke: rgba(255, 255, 255, 0.08);
+  --ui-stroke-strong: rgba(255, 255, 255, 0.14);
+  --ui-shadow: 0 24px 64px rgba(2, 6, 23, 0.34);
+  --bento-radius: 16px;
+  --bento-blur: blur(18px);
+}
+
+body {
+  background:
+    radial-gradient(circle at top, rgba(148, 163, 184, 0.12), transparent 32%),
+    radial-gradient(circle at 84% 16%, rgba(34, 197, 94, 0.06), transparent 22%),
+    linear-gradient(180deg, #0a0f19 0%, #0f1724 52%, #0a1018 100%);
+}
+
+body::before {
+  background-size: 56px 56px;
+  opacity: 0.18;
+}
+
+body::after {
+  background:
+    radial-gradient(circle at 16% 8%, rgba(255, 255, 255, 0.03), transparent 24%),
+    radial-gradient(circle at 82% 78%, rgba(34, 197, 94, 0.05), transparent 20%);
+}
+
+.topbar {
+  padding-top: 1rem;
+}
+
+.topbar-inner {
+  padding: 0.85rem 1rem;
+  border-color: var(--ui-stroke);
+  border-radius: 18px;
+  background: rgba(10, 15, 25, 0.74);
+  box-shadow: 0 16px 40px rgba(2, 6, 23, 0.26);
+  backdrop-filter: blur(18px);
+}
+
+.nav-links a,
+.lead,
+.compact-lead,
+.info-card p,
+.machine-copy,
+.machine-controls span,
+.machine-stats span,
+.game-note,
+.rematch-note,
+.share-note,
+.meta-hint,
+.presence-state,
+.lobby-card-copy,
+.pong-lobby-copy,
+.pong-lobby-card-note,
+.pong-lobby-waiting-copy {
+  color: var(--text-muted);
+}
+
+.button {
+  min-height: 48px;
+  border-radius: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  box-shadow: 0 10px 24px rgba(2, 6, 23, 0.18);
+}
+
+.button-primary {
+  background: var(--primary);
+  color: #04111d;
+  box-shadow: 0 14px 32px var(--primary-glow);
+}
+
+.button-secondary {
+  border-color: var(--ui-stroke);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.section-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.section-header-copy {
+  gap: 0.55rem;
+}
+
+.section-title {
+  min-height: auto;
+  padding-left: 0;
+  border-left: 0;
+  font-size: clamp(1.55rem, 2.4vw, 2rem);
+}
+
+.arcade-hero-grid,
+.arcade-dashboard-grid,
+.game-layout,
+.game-layout-pong {
+  gap: 24px;
+}
+
+.arcade-hero-grid {
+  grid-template-columns: minmax(0, 1.08fr) minmax(320px, 0.92fr);
+}
+
+.arcade-dashboard-grid {
+  grid-template-columns: minmax(340px, 0.95fr) minmax(0, 1.05fr);
+}
+
+.info-card,
+.arcade-marquee,
+.stage-card,
+.hero-panel,
+.game-link-card,
+.presence-card {
+  border: 1px solid var(--ui-stroke);
+  border-radius: var(--bento-radius);
+  background: linear-gradient(180deg, rgba(20, 28, 44, 0.76), rgba(10, 15, 24, 0.9));
+  box-shadow: var(--ui-shadow);
+  backdrop-filter: var(--bento-blur);
+}
+
+.stage-card,
+.info-card,
+.arcade-marquee,
+.hero-panel,
+.game-link-card {
+  padding: 1.35rem;
+}
+
+.lobby-bento-grid {
+  align-items: stretch;
+}
+
+.lobby-bento-card {
+  overflow: hidden;
+}
+
+.lobby-intro-card {
+  gap: 1.25rem;
+  min-height: 100%;
+  justify-content: center;
+}
+
+.lobby-side-grid {
+  gap: 24px;
+}
+
+.hero-inline-meta,
+.lobby-chip-row,
+.pong-lobby-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.hero-inline-meta span,
+.lobby-chip-row span,
+.pong-lobby-strip span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.5rem;
+  padding: 0.55rem 0.9rem;
+  border: 1px solid var(--ui-stroke);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-main);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.lobby-card-title {
+  font-size: clamp(1.5rem, 2.4vw, 1.9rem);
+}
+
+.lobby-card-action {
+  margin-top: auto;
+}
+
+.card-header,
+.profile-hero,
+.xp-panel,
+.highscore-table-shell,
+.achievement-badge,
+.presence-card,
+.status-box,
+.hud span {
+  border-color: var(--ui-stroke);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.text-field {
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--ui-stroke);
+  border-radius: 14px;
+  background: rgba(7, 11, 19, 0.78);
+  color: var(--text-main);
+}
+
+.text-field::placeholder {
+  color: var(--text-muted);
+}
+
+.text-field:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px var(--primary-glow);
+}
+
+.filter-section {
+  top: 84px;
+  margin-bottom: 24px;
+}
+
+.filter-container {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) auto;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid var(--ui-stroke);
+  border-radius: var(--bento-radius);
+  background: rgba(10, 15, 25, 0.72);
+  box-shadow: 0 18px 44px rgba(2, 6, 23, 0.24);
+  backdrop-filter: blur(16px);
+}
+
+.search-wrapper {
+  max-width: none;
+}
+
+.search-wrapper input {
+  min-height: 54px;
+  padding: 0 1rem 0 2.85rem;
+  border: 1px solid var(--ui-stroke);
+  border-radius: 14px;
+  background: rgba(7, 11, 19, 0.8);
+  color: var(--text-main);
+}
+
+.category-pills {
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pill {
+  min-height: 44px;
+  padding: 0.55rem 1rem;
+  border: 1px solid var(--ui-stroke);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
+}
+
+.pill.is-active,
+.pill[aria-pressed="true"] {
+  background: rgba(255, 255, 255, 0.94);
+  color: #04111d;
+  box-shadow: 0 12px 28px rgba(255, 255, 255, 0.12);
+}
+
+.arcade-machine-grid,
+.game-grid,
+.game-grid-skeleton {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+.arcade-machine {
+  --card-accent: var(--accent);
+  --card-glow: var(--accent-soft);
+  position: relative;
+  gap: 1rem;
+  padding: 1.25rem;
+  border: 1px solid var(--ui-stroke);
+  border-radius: var(--bento-radius);
+  background: linear-gradient(180deg, rgba(18, 24, 38, 0.86), rgba(9, 13, 22, 0.92));
+  box-shadow: 0 20px 48px rgba(2, 6, 23, 0.28);
+  backdrop-filter: blur(14px);
+  overflow: hidden;
+}
+
+.arcade-machine::before {
+  background:
+    radial-gradient(circle at top right, var(--card-glow), transparent 30%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 34%);
+  opacity: 0.88;
+}
+
+.arcade-machine:hover,
+.arcade-machine:focus-visible {
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 28px 72px rgba(2, 6, 23, 0.34),
+    0 0 30px var(--card-glow);
+  transform: translateY(-6px);
+}
+
+.snake-machine {
+  --card-accent: #22c55e;
+  --card-glow: rgba(34, 197, 94, 0.24);
+}
+
+.breakout-machine {
+  --card-accent: #fb923c;
+  --card-glow: rgba(251, 146, 60, 0.24);
+}
+
+.pong-machine {
+  --card-accent: #38bdf8;
+  --card-glow: rgba(56, 189, 248, 0.24);
+}
+
+.memory-machine {
+  --card-accent: #f59e0b;
+  --card-glow: rgba(245, 158, 11, 0.24);
+}
+
+.machine-card-top {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.machine-marquee,
+.machine-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.2rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.machine-marquee {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-main);
+}
+
+.machine-tag {
+  border: 1px solid transparent;
+  background: var(--card-glow);
+  color: var(--card-accent);
+}
+
+.machine-screen {
+  min-height: 248px;
+  aspect-ratio: auto;
+  padding: 1.15rem;
+  border-radius: calc(var(--bento-radius) - 2px);
+  background:
+    linear-gradient(180deg, rgba(7, 11, 19, 0.82), rgba(12, 18, 30, 0.62)),
+    rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.machine-copy-block,
+.machine-screen-footer {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.machine-title {
+  margin-top: 0;
+  font-size: 1.45rem;
+  white-space: normal;
+}
+
+.machine-copy {
+  margin-top: 0;
+}
+
+.machine-screen-footer {
+  margin-top: auto;
+}
+
+.machine-stats,
+.machine-controls {
+  gap: 0.55rem;
+}
+
+.machine-stats span,
+.machine-controls span {
+  min-height: 2.2rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.machine-cta {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 56px;
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
+  background: var(--card-accent);
+  color: #04111d;
+  font-size: 1rem;
+  font-weight: 800;
+  box-shadow: 0 14px 32px var(--card-glow);
+}
+
+.page-intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 24px;
+}
+
+.stage-card {
+  padding: 1.35rem;
+}
+
+.hud span,
+.status-box,
+.presence-card {
+  border-radius: 14px;
+}
+
+.status-box strong,
+.machine-stats strong,
+.hud strong,
+.xp-total,
+.score-cell,
+.profile-level-badge strong,
+.pong-room-code-display strong,
+.result-card .value,
+.ad-countdown-value {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+.stage-viewport {
+  --cabinet-padding: clamp(0.75rem, 1.6vw, 0.95rem);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, #2a313d 0%, #151b26 35%, #0a0f18 100%),
+    rgba(12, 18, 30, 0.98);
+  box-shadow:
+    0 18px 44px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+.stage-viewport::before {
+  inset: calc(var(--cabinet-padding) * 0.66);
+  border-radius: 18px;
+  box-shadow:
+    inset 0 0 20px rgba(0, 0, 0, 0.86),
+    0 0 28px var(--screen-glow);
+}
+
+.stage-viewport::after {
+  inset: calc(var(--cabinet-padding) + 0.05rem);
+  border-radius: 16px;
+  opacity: 0.62;
+}
+
+.game-canvas,
+.memory-stage {
+  border-radius: 16px;
+  box-shadow:
+    inset 0 0 18px rgba(0, 0, 0, 0.82),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 12px 26px rgba(2, 6, 23, 0.36),
+    0 0 28px var(--screen-glow);
+}
+
+.pong-lobby-screen {
+  inset: calc(var(--cabinet-padding) + 0.28rem);
+  padding: 1.25rem;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(7, 11, 19, 0.8), rgba(7, 11, 19, 0.72)),
+    rgba(10, 15, 25, 0.72);
+  backdrop-filter: blur(18px);
+}
+
+.pong-lobby-shell,
+.pong-lobby-header,
+.pong-lobby-card-header,
+.pong-lobby-card-footer,
+.pong-lobby-join-stack {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.pong-lobby-shell {
+  gap: 1.1rem;
+}
+
+.pong-lobby-header {
+  max-width: 42rem;
+}
+
+.pong-lobby-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  align-items: stretch;
+}
+
+.pong-lobby-card {
+  gap: 1.1rem;
+  padding: 1.4rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.pong-lobby-card h2,
+.pong-lobby-header h2 {
+  font-size: clamp(1.7rem, 4vw, 2.2rem);
+  line-height: 1.02;
+}
+
+.pong-lobby-button {
+  width: 100%;
+  min-height: 60px;
+}
+
+.pong-lobby-code-input {
+  min-height: 68px;
+  border: 1px solid rgba(56, 189, 248, 0.42);
+  border-radius: 16px;
+  background: rgba(7, 11, 19, 0.84);
+  font-size: clamp(1.35rem, 4vw, 1.5rem);
+  letter-spacing: 0.3em;
+}
+
+.pong-lobby-code-input:focus {
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.14), 0 0 30px rgba(56, 189, 248, 0.12);
+}
+
+.pong-lobby-waiting {
+  gap: 1.1rem;
+  padding-top: 0.4rem;
+}
+
+.pong-lobby-status {
+  color: #dbeafe;
+  font-size: 0.84rem;
+  letter-spacing: 0.2em;
+}
+
+.pong-room-code-display {
+  width: min(100%, 34rem);
+  padding: 1.35rem 1.5rem;
+  border: 1px solid rgba(56, 189, 248, 0.24);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at top, rgba(56, 189, 248, 0.08), transparent 55%),
+    rgba(255, 255, 255, 0.04);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 0 36px rgba(56, 189, 248, 0.1);
+}
+
+.pong-room-code-display strong {
+  font-size: clamp(3.1rem, 10vw, 4.8rem);
+}
+
+.pong-lobby-spinner {
+  width: 18px;
+  height: 18px;
+}
+
+@media (max-width: 1080px) {
+  .arcade-hero-grid,
+  .arcade-dashboard-grid,
+  .game-layout,
+  .game-layout-pong,
+  .page-intro {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .filter-container,
+  .pong-lobby-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .lobby-side-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .arcade-machine-grid,
+  .game-grid,
+  .game-grid-skeleton,
+  .arcade-progress-grid,
+  .arcade-score-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-inline-meta,
+  .lobby-chip-row,
+  .pong-lobby-strip {
+    gap: 0.6rem;
+  }
+
+  .topbar-inner,
+  .page-intro,
+  .stage-toolbar,
+  .footer-inner {
+    align-items: stretch;
+  }
+
+  .pong-lobby-screen {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .content-wrapper {
+    padding: 32px 16px;
+  }
+
+  .stage-card,
+  .info-card,
+  .arcade-marquee,
+  .arcade-machine {
+    padding: 1rem;
+  }
+
+  .machine-screen {
+    min-height: 220px;
+    padding: 1rem;
+  }
+
+  .machine-cta,
+  .pong-lobby-button {
+    min-height: 54px;
+  }
+
+  .pong-lobby-code-input {
+    min-height: 60px;
+    font-size: 1.1rem;
+    letter-spacing: 0.24em;
+  }
+
+  .pong-room-code-display {
+    width: 100%;
+    padding: 1.15rem 1rem;
+  }
+
+  .pong-room-code-display strong {
+    font-size: clamp(2.4rem, 18vw, 3.4rem);
+    letter-spacing: 0.18em;
+    text-indent: 0.18em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topbar-inner,
+  .arcade-machine,
+  .machine-cta,
+  .pong-lobby-card,
+  .pong-room-code-display,
+  .stage-viewport,
+  .game-canvas,
+  .memory-stage {
+    transition: none;
+  }
+}
+
+.neon-match-theme {
+  --screen-glow: rgba(236, 72, 153, 0.18);
+  --primary: #ec4899;
+  --primary-glow: rgba(236, 72, 153, 0.28);
+}
+
+.neon-match-machine {
+  --card-accent: #ec4899;
+  --card-glow: rgba(236, 72, 153, 0.24);
+}
+
+.neon-match-stage {
+  position: relative;
+  z-index: 0;
+  width: 100%;
+  min-height: 560px;
+  border-radius: 16px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent 26%),
+    radial-gradient(circle at 50% 44%, rgba(236, 72, 153, 0.08), transparent 28%),
+    linear-gradient(180deg, #07111d 0%, #0b1423 52%, #08111a 100%);
+  box-shadow: inset 0 0 34px rgba(0, 0, 0, 0.48);
+}
+
+.neon-match-stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 18%),
+    radial-gradient(circle at center, transparent 54%, rgba(2, 6, 23, 0.42) 100%);
+  pointer-events: none;
+}
+
+.neon-match-particles {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.neon-match-table {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 1rem;
+  min-height: 560px;
+  padding: 1.2rem;
+  touch-action: manipulation;
+}
+
+.neon-match-opponent,
+.neon-match-player {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.neon-match-seat-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.neon-match-seat-copy,
+.neon-match-turn {
+  margin: 0;
+  color: #e2e8f0;
+}
+
+.neon-match-hint {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.4rem;
+  padding: 0.45rem 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-main);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.neon-match-center {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(140px, 180px));
+  justify-content: center;
+  align-content: center;
+  gap: 1.1rem;
+}
+
+.neon-match-stack {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 0.75rem;
+  min-height: 220px;
+  padding: 1rem 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 18px 30px rgba(2, 6, 23, 0.22);
+}
+
+button.neon-match-stack {
+  cursor: pointer;
+}
+
+button.neon-match-stack:not(.is-disabled):hover,
+button.neon-match-stack:not(.is-disabled):focus-visible {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 20px 34px rgba(2, 6, 23, 0.28),
+    0 0 24px rgba(236, 72, 153, 0.12);
+}
+
+button.neon-match-stack.is-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.neon-match-stack-label {
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.neon-match-stack-body {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 96px;
+  height: 136px;
+  border: 2px solid rgba(255, 255, 255, 0.92);
+  border-radius: 18px;
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+  overflow: hidden;
+  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.32);
+}
+
+.neon-match-stack-body::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    135deg,
+    rgba(236, 72, 153, 0.18),
+    rgba(236, 72, 153, 0.18) 10px,
+    rgba(59, 130, 246, 0.12) 10px,
+    rgba(59, 130, 246, 0.12) 20px
+  );
+}
+
+.neon-match-stack-mark {
+  position: relative;
+  z-index: 1;
+  color: #f8fafc;
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.neon-match-stack-meta {
+  color: var(--text-main);
+  font-size: 0.88rem;
+  text-align: center;
+}
+
+.neon-match-discard-pile {
+  justify-items: center;
+}
+
+.neon-match-opponent-hand,
+.neon-match-player-hand {
+  position: relative;
+  width: min(100%, 760px);
+  margin: 0 auto;
+}
+
+.neon-match-opponent-hand {
+  height: 132px;
+}
+
+.neon-match-player-hand {
+  height: 218px;
+}
+
+.neon-match-card {
+  --fan-x: 0px;
+  --fan-y: 0px;
+  --fan-rotate: 0deg;
+  --card-scale: 1;
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 96px;
+  height: 136px;
+  margin-left: -48px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 2px solid rgba(255, 255, 255, 0.92);
+  border-radius: 18px;
+  background: #0f172a;
+  color: #fff;
+  box-shadow: 0 16px 28px rgba(0, 0, 0, 0.28);
+  transform: translateX(var(--fan-x)) translateY(var(--fan-y)) rotate(var(--fan-rotate)) scale(var(--card-scale));
+  transform-origin: center bottom;
+  transition: transform 0.24s ease, box-shadow 0.24s ease, opacity 0.22s ease, filter 0.22s ease;
+}
+
+button.neon-match-card {
+  cursor: pointer;
+  appearance: none;
+}
+
+.neon-match-card::after {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 14px;
+}
+
+.neon-match-card[data-color="red"] {
+  background: linear-gradient(180deg, #f87171, #ef4444);
+}
+
+.neon-match-card[data-color="blue"] {
+  background: linear-gradient(180deg, #60a5fa, #3b82f6);
+}
+
+.neon-match-card[data-color="green"] {
+  background: linear-gradient(180deg, #4ade80, #22c55e);
+}
+
+.neon-match-card[data-color="yellow"] {
+  background: linear-gradient(180deg, #facc15, #eab308);
+  color: #111827;
+}
+
+.neon-match-card-corner,
+.neon-match-card-center,
+.neon-match-card-back-mark {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  font-weight: 800;
+}
+
+.neon-match-card-corner {
+  position: absolute;
+  z-index: 1;
+  font-size: 0.92rem;
+  line-height: 1;
+}
+
+.neon-match-card-corner-top {
+  top: 12px;
+  left: 12px;
+}
+
+.neon-match-card-corner-bottom {
+  right: 12px;
+  bottom: 12px;
+  transform: rotate(180deg);
+}
+
+.neon-match-card-center {
+  position: relative;
+  z-index: 1;
+  font-size: 3.25rem;
+  line-height: 1;
+}
+
+.neon-match-card.is-back {
+  border-color: rgba(255, 255, 255, 0.78);
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+}
+
+.neon-match-card.is-back::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    135deg,
+    rgba(236, 72, 153, 0.18),
+    rgba(236, 72, 153, 0.18) 10px,
+    rgba(59, 130, 246, 0.12) 10px,
+    rgba(59, 130, 246, 0.12) 20px
+  );
+}
+
+.neon-match-card-back-shine {
+  position: absolute;
+  inset: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+}
+
+.neon-match-card-back-mark {
+  position: relative;
+  z-index: 1;
+  font-size: 1.25rem;
+  letter-spacing: 0.14em;
+}
+
+.neon-match-opponent-hand .neon-match-card {
+  top: 0;
+  bottom: auto;
+}
+
+.neon-match-discard-pile .neon-match-card,
+.neon-match-discard-pile .neon-match-card.is-entering.is-settled {
+  position: relative;
+  left: auto;
+  bottom: auto;
+  top: auto;
+  margin-left: 0;
+  transform: translateX(0) translateY(0) rotate(0deg) scale(1);
+}
+
+.neon-match-player-hand .neon-match-card:not(.is-disabled):hover,
+.neon-match-player-hand .neon-match-card:not(.is-disabled):focus-visible {
+  transform: translateX(var(--fan-x)) translateY(calc(var(--fan-y) - 16px)) rotate(var(--fan-rotate)) scale(var(--card-scale));
+  box-shadow:
+    0 22px 36px rgba(0, 0, 0, 0.34),
+    0 0 22px rgba(236, 72, 153, 0.18);
+  z-index: 5;
+}
+
+.neon-match-card.is-disabled {
+  opacity: 0.42;
+  filter: saturate(0.5);
+  cursor: not-allowed;
+}
+
+.neon-match-card.is-entering {
+  opacity: 0;
+  transform: translateX(var(--fan-x)) translateY(calc(var(--fan-y) + 18px)) rotate(calc(var(--fan-rotate) - 4deg)) scale(calc(var(--card-scale) * 0.92));
+}
+
+.neon-match-card.is-entering.is-settled {
+  opacity: 1;
+  transform: translateX(var(--fan-x)) translateY(var(--fan-y)) rotate(var(--fan-rotate)) scale(var(--card-scale));
+}
+
+.neon-match-discard-pile .neon-match-card.is-entering {
+  opacity: 0;
+  transform: translateY(18px) rotate(-6deg) scale(0.92);
+}
+
+.neon-match-discard-pile .neon-match-card.is-entering.is-settled {
+  opacity: 1;
+  transform: translateY(0) rotate(0deg) scale(1);
+}
+
+@media (max-width: 900px) {
+  .neon-match-center {
+    grid-template-columns: repeat(2, minmax(132px, 1fr));
+  }
+
+  .neon-match-player-hand {
+    width: 100%;
+  }
+}
+
+@media (max-width: 760px) {
+  .neon-match-table {
+    min-height: 520px;
+    padding: 1rem;
+  }
+
+  .neon-match-seat-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .neon-match-opponent-hand {
+    height: 112px;
+  }
+
+  .neon-match-player-hand {
+    height: 186px;
+  }
+
+  .neon-match-card {
+    width: 82px;
+    height: 118px;
+    margin-left: -41px;
+  }
+
+  .neon-match-card-center {
+    font-size: 2.7rem;
+  }
+
+  .neon-match-stack {
+    min-height: 190px;
+  }
+
+  .neon-match-stack-body {
+    width: 84px;
+    height: 120px;
+  }
+}
+
+@media (max-width: 560px) {
+  .neon-match-stage,
+  .neon-match-table {
+    min-height: 500px;
+  }
+
+  .neon-match-center {
+    gap: 0.75rem;
+  }
+
+  .neon-match-stack {
+    min-height: 172px;
+    padding: 0.85rem 0.7rem;
+    border-radius: 18px;
+  }
+
+  .neon-match-opponent-hand {
+    height: 96px;
+  }
+
+  .neon-match-player-hand {
+    height: 166px;
+  }
+
+  .neon-match-card {
+    width: 72px;
+    height: 102px;
+    margin-left: -36px;
+    border-radius: 16px;
+  }
+
+  .neon-match-card::after {
+    inset: 6px;
+    border-radius: 12px;
+  }
+
+  .neon-match-card-center {
+    font-size: 2.2rem;
+  }
+
+  .neon-match-card-corner {
+    font-size: 0.78rem;
+  }
+
+  .neon-match-stack-body {
+    width: 74px;
+    height: 106px;
+    border-radius: 16px;
+  }
+
+  .neon-match-hint {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .neon-match-stack,
+  .neon-match-card,
+  .neon-match-stage {
+    transition: none;
   }
 }

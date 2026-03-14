@@ -3,17 +3,17 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Snake.exe | Retro Arcade</title>
+  <title>Neon Breakout | Retro Arcade</title>
   <meta
     name="description"
-    content="Snake als eigenstaendige Browser-Game-Seite mit grossem Spielfeld."
+    content="Neon Breakout als schnelle Endless-Arkanoid-Runde mit Touch-Steuerung, Modal-Flow und lokalem Highscore."
   >
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
-<body class="game-page snake-theme">
+<body class="game-page breakout-theme">
   <a class="skip-link" href="#content">Zum Inhalt springen</a>
 
   <header class="topbar main-header">
@@ -22,16 +22,16 @@
         <span class="brand-mark logo-icon">RA</span>
         <span class="logo-text">RETRO<span>ARCADE</span></span>
       </a>
-      <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="snake-nav" aria-label="Menue oeffnen">
+      <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="breakout-nav" aria-label="Menue oeffnen">
         <span></span>
         <span></span>
         <span></span>
       </button>
-      <nav class="nav-links main-nav" id="snake-nav" aria-label="Spiele Navigation">
+      <nav class="nav-links main-nav" id="breakout-nav" aria-label="Spiele Navigation">
         <ul>
           <li><a href="index.html">Hauptmenue</a></li>
-          <li><a href="breakout.html">Breakout</a></li>
-          <li><a class="active" href="snake.html">Snake</a></li>
+          <li><a class="active" href="breakout.html">Breakout</a></li>
+          <li><a href="snake.html">Snake</a></li>
           <li><a href="pong.html">Pong</a></li>
           <li><a href="memory.html">Memory</a></li>
         </ul>
@@ -46,10 +46,10 @@
     <div class="container">
       <section class="page-intro">
         <div>
-          <p class="kicker">Game 01</p>
-          <h1>Snake.exe</h1>
+          <p class="kicker">Game 04</p>
+          <h1>Neon Breakout</h1>
           <p class="lead">
-            Eine grosse Einzelansicht fuer den Klassiker. Sammle Orbs, wachse weiter und vermeide Wand und Eigenkollision.
+            Eine kurze Endless-Arkanoid-Runde fuer schnelle Retries: lenke den Paddle, zerlege die Neon-Wand und ueberlebe Welle fuer Welle.
           </p>
         </div>
         <div class="page-actions">
@@ -57,39 +57,40 @@
         </div>
       </section>
 
-      <section class="game-layout">
-        <article class="stage-card">
+      <section class="game-layout game-layout-pong">
+        <article class="stage-card stage-card-wide">
           <div class="stage-toolbar">
-            <div class="hud hud-wide">
-              <span>Score <strong id="snake-score">0</strong></span>
-              <span>Best <strong data-arcade-record="snake-score">0</strong></span>
-              <span>Status <strong id="snake-status">Bereit</strong></span>
+            <div class="hud hud-wide hud-online">
+              <span>Score <strong id="breakout-score">0</strong></span>
+              <span>Best <strong data-arcade-record="breakout-score">0</strong></span>
+              <span>Bloecke <strong id="breakout-bricks">0</strong></span>
+              <span>Status <strong id="breakout-status">Bereit</strong></span>
             </div>
-            <button class="button button-primary stage-button" id="snake-reset" type="button">Neu starten</button>
+            <button class="button button-primary stage-button" id="breakout-reset" type="button">Neu starten</button>
           </div>
 
-          <div class="stage-viewport stage-viewport-square arcade-cabinet">
+          <div class="stage-viewport stage-viewport-wide arcade-cabinet">
             <canvas
-              class="game-canvas game-canvas-square"
-              id="snake-canvas"
-              width="560"
+              class="game-canvas game-canvas-wide"
+              id="breakout-canvas"
+              width="960"
               height="560"
               tabindex="0"
-              aria-label="Snake Spiel"
+              aria-label="Neon Breakout Spiel"
             ></canvas>
-            <div class="game-overlay" id="snake-overlay" aria-live="polite">
-              <p class="game-overlay-kicker">Snake.exe</p>
-              <h2 class="game-overlay-title" id="snake-overlay-title">Bereit fuer den Start</h2>
-              <p class="game-overlay-text" id="snake-overlay-text">
-                Starte eine Runde und iss moeglichst viele neon-gruene Orbs.
+            <div class="game-overlay" id="breakout-overlay" aria-live="polite">
+              <p class="game-overlay-kicker">Neon Breakout</p>
+              <h2 class="game-overlay-title" id="breakout-overlay-title">Neon Breakout ist bereit</h2>
+              <p class="game-overlay-text" id="breakout-overlay-text">
+                Halte den Ball am Leben, knacke die Neon-Bloecke und ueberlebe so viele Wellen wie moeglich.
               </p>
-              <p class="game-overlay-meta" id="snake-overlay-meta">Bestwert: 0</p>
+              <p class="game-overlay-meta" id="breakout-overlay-meta">Bestwert: 0</p>
               <div class="overlay-actions">
-                <button class="button button-primary" id="snake-overlay-action" type="button">Spiel starten</button>
+                <button class="button button-primary" id="breakout-overlay-action" type="button">Runde starten</button>
               </div>
             </div>
           </div>
-          <p class="game-note">Steuerung: Pfeiltasten oder WASD. Leertaste startet nach Game Over sofort neu.</p>
+          <p class="game-note">Steuerung: Ziehen oder tippen auf Mobile, Pfeile oder A/D auf Desktop. Ein verlorener Ball beendet den Run sofort.</p>
         </article>
 
         <aside class="info-stack">
@@ -105,8 +106,8 @@
                 <strong data-arcade-stat="total-starts">0</strong>
               </div>
               <div class="status-box">
-                <span>Snake Runs</span>
-                <strong data-arcade-stat="snake-plays">0</strong>
+                <span>Breakout Best</span>
+                <strong data-arcade-record="breakout-score">0</strong>
               </div>
               <div class="status-box">
                 <span>Sound</span>
@@ -114,31 +115,30 @@
               </div>
             </div>
             <p>
-              Gesamtpunkte in Snake: <strong data-arcade-stat="snake-total-score">0</strong>. Im Hauptmenue kannst du dein Profil zentral anpassen.
+              Breakout haengt komplett im globalen Cabinet- und Modal-Flow. Dein bester Run bleibt lokal im Browser gespeichert.
             </p>
           </article>
 
           <article class="info-card">
             <p class="eyebrow">Steuerung</p>
             <ul class="plain-list compact-list">
-              <li>Pfeiltasten oder WASD fuer Richtungen</li>
-              <li>Leertaste fuer Neustart nach einer Niederlage</li>
-              <li>Das Spielfeld ist bewusst groesser als vorher</li>
+              <li>Pointer oder Finger direkt im Spielfeld bewegen den Paddle</li>
+              <li>Pfeile links und rechts oder A/D funktionieren ebenfalls</li>
+              <li>Ein Touch oder die Leertaste startet den naechsten Run sofort</li>
             </ul>
           </article>
 
           <article class="info-card">
-            <p class="eyebrow">Highscore</p>
+            <p class="eyebrow">Feedback Loop</p>
             <p>
-              Dein bester Lauf wird lokal im Browser gespeichert. Aktueller Bestwert:
-              <strong class="record-value" data-arcade-record="snake-score">0</strong>
+              Zerstoerte Bloecke geben Partikel plus Synth-Pop. Wenn der Ball faellt, landet jeder Run direkt im globalen Result-Modal.
             </p>
           </article>
 
           <article class="info-card">
-            <p class="eyebrow">Ziel</p>
+            <p class="eyebrow">Design Ziel</p>
             <p>
-              Iss die neon-gruenen Orbs, erhoehe deinen Score und halte die Schlange so lange wie moeglich am Leben.
+              Eine schnelle, saubere Skill-Schleife mit nur einem Leben: perfekt fuer kurze Sessions, sofortige Retries und harte Score-Jagd.
             </p>
           </article>
         </aside>
@@ -148,7 +148,7 @@
 
   <footer class="site-footer">
     <div class="container footer-inner">
-      <p>Snake auf eigener Spielseite mit Profil- und Meta-Anzeige.</p>
+      <p>Neon Breakout als schneller Endless-Run mit lokalem Highscore, Synth-Audio und Mobile-Steuerung.</p>
       <p>&copy; <span id="year"></span> Retro Arcade</p>
     </div>
   </footer>
@@ -157,7 +157,3 @@
   <script src="app.js"></script>
 </body>
 </html>
-
-
-
-

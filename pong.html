@@ -30,6 +30,7 @@
       <nav class="nav-links main-nav" id="pong-nav" aria-label="Spiele Navigation">
         <ul>
           <li><a href="index.html">Hauptmenue</a></li>
+          <li><a href="breakout.html">Breakout</a></li>
           <li><a href="snake.html">Snake</a></li>
           <li><a class="active" href="pong.html">Pong</a></li>
           <li><a href="memory.html">Memory</a></li>
@@ -68,15 +69,82 @@
             <button class="button button-primary stage-button" id="pong-reset" type="button">Neue Runde</button>
           </div>
 
-          <div class="stage-viewport stage-viewport-wide">
+          <div class="stage-viewport stage-viewport-wide arcade-cabinet">
             <canvas
-              class="game-canvas game-canvas-wide"
+              class="game-canvas game-canvas-wide pong-stage-canvas"
               id="pong-canvas"
               width="960"
               height="560"
               tabindex="0"
               aria-label="Online Pong Spiel"
             ></canvas>
+            <div class="pong-lobby-screen" id="pong-lobby-screen" aria-live="polite">
+              <div class="pong-lobby-shell">
+                <header class="pong-lobby-header">
+                  <p class="pong-lobby-kicker">Online Lobby</p>
+                  <h2>Raum starten oder betreten</h2>
+                  <p class="pong-lobby-copy">
+                    Zwei klare Wege in die Arena: erstelle einen Raum und teile den Code oder gib einen bestehenden Code ein und springe direkt hinein.
+                  </p>
+                </header>
+                <div class="pong-lobby-strip" aria-hidden="true">
+                  <span>Schneller Einstieg</span>
+                  <span>Live Raumcode</span>
+                  <span>Mobile ready</span>
+                </div>
+                <div class="pong-lobby-actions" id="pong-lobby-actions">
+                  <section class="pong-lobby-card">
+                    <div class="pong-lobby-card-header">
+                      <p class="pong-lobby-kicker">Host</p>
+                      <h2>Raum erstellen</h2>
+                      <p class="pong-lobby-copy">
+                        Starte sofort eine neue Arena, erhalte einen Raumcode und warte im Cabinet auf Spieler 2.
+                      </p>
+                    </div>
+                    <div class="pong-lobby-card-footer">
+                      <button class="button button-primary pong-lobby-button" id="pong-lobby-create" type="button">Raum erstellen</button>
+                      <p class="pong-lobby-card-note">Der Code erscheint danach gross und kopierbar direkt im Bildschirm.</p>
+                    </div>
+                  </section>
+                  <section class="pong-lobby-card">
+                    <div class="pong-lobby-card-header">
+                      <p class="pong-lobby-kicker">Join</p>
+                      <h2>Raum-Code eingeben</h2>
+                      <p class="pong-lobby-copy">
+                        Tippe den Code wie einen Geheimschluessel ein und springe direkt in eine laufende Lobby.
+                      </p>
+                    </div>
+                    <div class="pong-lobby-join-stack">
+                      <label class="field-stack" for="pong-lobby-room-input">
+                        <span>Raum-Code</span>
+                        <input
+                          class="text-field pong-lobby-code-input"
+                          id="pong-lobby-room-input"
+                          type="text"
+                          inputmode="text"
+                          maxlength="6"
+                          placeholder="ABCD"
+                          autocomplete="one-time-code"
+                          spellcheck="false"
+                        >
+                      </label>
+                      <button class="button button-secondary pong-lobby-button" id="pong-lobby-join" type="button">Beitreten</button>
+                    </div>
+                  </section>
+                </div>
+                <div class="pong-lobby-waiting is-hidden" id="pong-lobby-waiting">
+                  <p class="pong-lobby-kicker">Lobby aktiv</p>
+                  <p class="pong-lobby-status" id="pong-lobby-status-text">Raum wird vorbereitet</p>
+                  <button class="pong-room-code-display" id="pong-lobby-room-copy" type="button">
+                    <span>Raumcode</span>
+                    <strong id="pong-lobby-room-value">----</strong>
+                    <small>Tippen zum Kopieren</small>
+                  </button>
+                  <div class="pong-lobby-spinner" aria-hidden="true"></div>
+                  <p class="pong-lobby-waiting-copy" id="pong-lobby-waiting-text">Warte auf Herausforderer...</p>
+                </div>
+              </div>
+            </div>
             <div class="game-overlay game-overlay-compact is-hidden" id="pong-match-overlay" aria-live="polite">
               <p class="game-overlay-kicker">Pong Duel</p>
               <h2 class="game-overlay-title" id="pong-match-title">Bereit fuer die Revanche</h2>

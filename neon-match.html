@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Neon Match | Retro Arcade</title>
+  <meta
+    name="description"
+    content="Neon Match als Uno-Style Singleplayer-Prototyp mit CSS-Karten, Bot-Zug und Cabinet-Tisch."
+  >
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="game-page neon-match-theme">
+  <a class="skip-link" href="#content">Zum Inhalt springen</a>
+
+  <header class="topbar main-header">
+    <div class="container topbar-inner header-container">
+      <a class="brand logo" href="index.html">
+        <span class="brand-mark logo-icon">RA</span>
+        <span class="logo-text">RETRO<span>ARCADE</span></span>
+      </a>
+      <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="neon-match-nav" aria-label="Menue oeffnen">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <nav class="nav-links main-nav" id="neon-match-nav" aria-label="Spiele Navigation">
+        <ul>
+          <li><a href="index.html">Hauptmenue</a></li>
+          <li><a href="breakout.html">Breakout</a></li>
+          <li><a href="snake.html">Snake</a></li>
+          <li><a href="pong.html">Pong</a></li>
+          <li><a href="memory.html">Memory</a></li>
+          <li><a class="active" href="neon-match.html">Neon Match</a></li>
+        </ul>
+      </nav>
+      <div class="topbar-controls header-actions">
+        <button class="button button-secondary btn-outline topbar-sound" data-arcade-sound-toggle type="button">Sound: AN</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="content" class="game-shell">
+    <div class="container">
+      <section class="page-intro">
+        <div>
+          <p class="kicker">Game 05 Social Prototype</p>
+          <h1>Neon Match</h1>
+          <p class="lead">
+            Ein Uno-Style Kartenprototyp fuer schnelle Social-Matches: gleiche Farbe oder gleiche Zahl, klares Feedback und ein Bot, der direkt kontert.
+          </p>
+        </div>
+        <div class="page-actions">
+          <a class="button button-secondary menu-return" href="index.html">Zur&uuml;ck zum Hauptmen&uuml;</a>
+        </div>
+      </section>
+
+      <section class="game-layout game-layout-pong">
+        <article class="stage-card stage-card-wide">
+          <div class="stage-toolbar">
+            <div class="hud hud-wide hud-online">
+              <span>Bot <strong id="neon-match-bot-count">7</strong></span>
+              <span>Deck <strong id="neon-match-deck-count">0</strong></span>
+              <span>Hand <strong id="neon-match-player-count">7</strong></span>
+              <span>Status <strong id="neon-match-status">Bereit</strong></span>
+            </div>
+            <button class="button button-primary stage-button" id="neon-match-reset" type="button">Neu austeilen</button>
+          </div>
+
+          <div class="stage-viewport stage-viewport-wide arcade-cabinet">
+            <div class="neon-match-stage" id="neon-match-stage">
+              <canvas class="neon-match-particles" id="neon-match-particles" aria-hidden="true"></canvas>
+              <section class="neon-match-table" aria-label="Neon Match Spieltisch">
+                <div class="neon-match-opponent">
+                  <div class="neon-match-seat-head">
+                    <p class="eyebrow">Gegner</p>
+                    <p class="neon-match-seat-copy" id="neon-match-opponent-copy">Der Bot sucht nach einer passenden Karte.</p>
+                  </div>
+                  <div class="neon-match-opponent-hand" id="neon-match-bot-hand" aria-label="Handkarten des Bots"></div>
+                </div>
+
+                <div class="neon-match-center">
+                  <button class="neon-match-stack neon-match-draw-pile" id="neon-match-draw" type="button" aria-label="Karte nachziehen">
+                    <span class="neon-match-stack-label">Nachziehen</span>
+                    <span class="neon-match-stack-body">
+                      <span class="neon-match-stack-mark">NM</span>
+                    </span>
+                    <strong class="neon-match-stack-meta" id="neon-match-draw-meta">Ziehe eine Karte</strong>
+                  </button>
+
+                  <div class="neon-match-stack neon-match-discard-pile" id="neon-match-discard" aria-live="polite"></div>
+                </div>
+
+                <div class="neon-match-player">
+                  <div class="neon-match-seat-head neon-match-seat-head-player">
+                    <div>
+                      <p class="eyebrow">Deine Hand</p>
+                      <p class="neon-match-turn" id="neon-match-turn">Lege Farbe oder Zahl passend.</p>
+                    </div>
+                    <span class="neon-match-hint" id="neon-match-hint">Nur passende Karten sind aktiv.</span>
+                  </div>
+                  <div class="neon-match-player-hand" id="neon-match-player-hand" aria-label="Deine Handkarten"></div>
+                </div>
+              </section>
+            </div>
+            <div class="game-overlay" id="neon-match-overlay" aria-live="polite">
+              <p class="game-overlay-kicker">Neon Match</p>
+              <h2 class="game-overlay-title" id="neon-match-overlay-title">Erste Hand austeilen</h2>
+              <p class="game-overlay-text" id="neon-match-overlay-text">
+                Du spielst gegen einen einfachen Bot. Lege nur Karten mit gleicher Farbe oder gleicher Zahl auf den Ablagestapel.
+              </p>
+              <p class="game-overlay-meta" id="neon-match-overlay-meta">7 Karten pro Hand, Zahlen 0 bis 9, keine Spezialkarten im Prototyp.</p>
+              <div class="overlay-actions">
+                <button class="button button-primary" id="neon-match-overlay-action" type="button">Hand starten</button>
+              </div>
+            </div>
+          </div>
+          <p class="game-note">Tippe auf eine gueltige Karte oder auf den Nachziehstapel. Nach deinem Zug antwortet der Bot automatisch.</p>
+        </article>
+
+        <aside class="info-stack">
+          <article class="info-card meta-side-card">
+            <p class="eyebrow">Arcade Deck</p>
+            <div class="status-grid status-grid-wide">
+              <div class="status-box">
+                <span>Pilot</span>
+                <strong data-arcade-profile-name>Gast</strong>
+              </div>
+              <div class="status-box">
+                <span>Arcade Starts</span>
+                <strong data-arcade-stat="total-starts">0</strong>
+              </div>
+              <div class="status-box">
+                <span>Neon Match Runs</span>
+                <strong data-arcade-stat="neon-match-plays">0</strong>
+              </div>
+              <div class="status-box">
+                <span>Siege</span>
+                <strong data-arcade-stat="neon-match-wins">0</strong>
+              </div>
+            </div>
+            <p>
+              Neon Match testet unseren Social-Multiplayer-Look zuerst als Singleplayer-Duell gegen einen Bot und nutzt den globalen Modal- und Ad-Flow.
+            </p>
+          </article>
+
+          <article class="info-card">
+            <p class="eyebrow">Regeln</p>
+            <ul class="plain-list compact-list">
+              <li>Spiele nur Karten mit gleicher Farbe oder gleicher Zahl</li>
+              <li>Kein Match? Dann ziehst du genau eine Karte</li>
+              <li>Wer zuerst keine Karten mehr hat, gewinnt die Runde</li>
+            </ul>
+          </article>
+
+          <article class="info-card">
+            <p class="eyebrow">Flow</p>
+            <p>
+              Karten gleiten weich in die Mitte, der Bot reagiert mit kurzer Denkpause und jeder verlorene Run landet sauber im globalen Result-Modal.
+            </p>
+          </article>
+
+          <article class="info-card">
+            <p class="eyebrow">N&auml;chster Schritt</p>
+            <p>
+              Spezialkarten wie Skip, Reverse und +2 koennen spaeter direkt auf diese Zahlen-Engine gesetzt werden.
+            </p>
+          </article>
+        </aside>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p>Neon Match als CSS-Kartenprototyp mit Cabinet-Tisch, Bot-Zug und globalem Modal-Flow.</p>
+      <p>&copy; <span id="year"></span> Retro Arcade</p>
+    </div>
+  </footer>
+
+  <script src="i18n.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
