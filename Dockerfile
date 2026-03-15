@@ -18,8 +18,10 @@ COPY styles.css ./styles.css
 COPY app.js ./app.js
 COPY i18n.js ./i18n.js
 COPY snake.html ./snake.html
+COPY breakout.html ./breakout.html
 COPY pong.html ./pong.html
 COPY memory.html ./memory.html
+COPY neon-match.html ./neon-match.html
 COPY README.md ./README.md
 ENV HOST=0.0.0.0
 ENV PORT=10000
